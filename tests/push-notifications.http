@@ -1,0 +1,33 @@
+### Variables
+@baseUrl = http://localhost:3000
+@cookie = PASTE_YOUR_SUPABASE_COOKIE_HERE
+
+### 1. Subscribe to Push Notifications
+# Mimics the browser syncing its subscription with the database.
+POST {{baseUrl}}/api/push/subscribe
+Content-Type: application/json
+Cookie: {{cookie}}
+
+{
+  "subscription": {
+    "endpoint": "https://fcm.googleapis.com/fcm/send/fake-endpoint",
+    "keys": {
+      "p256dh": "BNcR9o9z8EEev8mt...example",
+      "auth": "A968cv_fG...example"
+    }
+  }
+}
+
+### 2. Send a Test Notification
+# Triggers a push event. Defaults to sending to current user if userId is omitted.
+POST {{baseUrl}}/api/push/send
+Content-Type: application/json
+Cookie: {{cookie}}
+
+{
+  "title": "Kanso REST Test",
+  "body": "This was triggered from the VS Code REST Client!",
+  "data": {
+    "url": "/settings"
+  }
+}

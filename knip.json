@@ -1,0 +1,31 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "app/**/{page,layout,template,not-found,error,loading,route}.{ts,tsx}",
+    "src/app/**/{page,layout,template,not-found,error,loading,route}.{ts,tsx}",
+    "vitest.config.ts",
+    "next.config.ts",
+    "playwright.config.ts"
+  ],
+  "project": ["src/**/*.{ts,tsx}", "app/**/*.{ts,tsx}"],
+  "ignore": [
+    "**/*.test.{ts,tsx}",
+    "**/*.spec.{ts,tsx}",
+    "tests/**",
+    "src/lib/mock/**"
+  ],
+  "ignoreDependencies": [
+    "@serwist/next",
+    "@next/bundle-analyzer",
+    "cross-env",
+    "autoprefixer",
+    "postcss",
+    "tailwindcss",
+    "tailwindcss-animate",
+    "@tailwindcss/postcss",
+    "@tailwindcss/typography",
+    "eslint-config-next",
+    "@vitest/coverage-v8",
+    "@playwright/test"
+  ]
+}

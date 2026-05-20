@@ -1,0 +1,12 @@
+# Vercel Deployment Ignore
+# Purpose: Prevent GSD metadata and internal logs from being uploaded.
+
+.planning/
+.agent/
+.serena/
+.vercel/
+.git/
+node_modules/
+.next/
+out/
+build/

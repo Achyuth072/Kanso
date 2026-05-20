@@ -1,0 +1,361 @@
+[
+  {
+    "version": "1.20.1",
+    "date": "2026-05-20",
+    "commits": [
+      {
+        "hash": "release",
+        "heading": "refactor: simplify version check logic, enhance masonry layout responsiveness and optimise header layout",
+        "body": ""
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.21",
+    "date": "2026-05-20",
+    "commits": [
+      {
+        "hash": "b243918",
+        "heading": "fix: establish clean z-index stack — 70/60/50/40 hierarchy",
+        "body": ""
+      },
+      {
+        "hash": "8b94a1a",
+        "heading": "fix: lower notifications to z-40 — stay below dialogs (z-50), above header/FAB via DOM order",
+        "body": ""
+      },
+      {
+        "hash": "74d0d32",
+        "heading": "fix: future-proof z-index hierarchy — changelog z-60, notifications z-50",
+        "body": ""
+      },
+      {
+        "hash": "6171e4e",
+        "heading": "fix: lower notification z-index to 40 (below changelog z-50), add 44px touch targets to filter component",
+        "body": ""
+      },
+      {
+        "hash": "c11f341",
+        "heading": "fix: Add missing isChangelogOpen fields to UiState test mocks",
+        "body": "- Add isChangelogOpen/setChangelogOpen to mock objects in\n  BoardDndCrossGroup, DndDropRace, and DndLayoutShift tests\n- Fixes 3 pre-existing TS errors blocking ci:validate\n\nRefs: ba2f6c5"
+      },
+      {
+        "hash": "20b3e38",
+        "heading": "fix: Consolidate completed grayscale class to TaskItem root",
+        "body": "- Remove duplicate task-ink-completed-card from ListTaskCard\n  (class already exists on parent TaskItem root div)\n- Fix Prettier formatting in KanbanBoard.test.tsx"
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.20",
+    "date": "2026-05-19",
+    "commits": [
+      {
+        "hash": "b99ebaf",
+        "heading": "refactor: Wrap sort/group in useTransition and fix filter component layout",
+        "body": "- Wrap setSortBy/setGroupBy in useTransition to dim task list during re-render\n- Animate task list opacity (0.6 to 1) with transition-opacity duration-150\n- Swap filter container transition-all for transition-colors to prevent icon jump\n- Keep filter button at fixed h-8 w-8; remove conditional sizing\n- Apply flex-1 to filter only when both sort and group are active\n- Hide flex-1 spacer when filter uses flex-1 to prevent 50/50 width split\n- Remove transition-colors from filter icon for instant color change\n- Speed up container (100ms) and chips fade-in (150ms) transitions\n- Balance chips right padding (pr-4 to pr-1.5) to eliminate gap"
+      },
+      {
+        "hash": "ba2f6c5",
+        "heading": "fix: resolve mobile z-index issues for toast notifications and move 'What's New' indicator to mobile header",
+        "body": ""
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.19",
+    "date": "2026-05-17",
+    "commits": [
+      {
+        "hash": "3a1dc3f",
+        "heading": "refactor: unify notification styling by removing colored backgrounds and standardizing icon colors",
+        "body": ""
+      },
+      {
+        "hash": "ad83f48",
+        "heading": "fix: override w-fit width on mobile Sonner toasts to ensure proper centering",
+        "body": ""
+      },
+      {
+        "hash": "4b98f8d",
+        "heading": "fix(calendar): Unskip CreateEventDialog from React Compiler",
+        "body": "- Replace destructured formState.isValid with useWatch-derived value to bypass RHF Proxy subscription blocked by compiler\n- Add \"use no memo\" directive to opt component out of compiler memoization\n- Add useFormState for error display only (non-critical path)"
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.18",
+    "date": "2026-05-16",
+    "commits": [
+      {
+        "hash": "67803ff",
+        "heading": "fix(53-16): align ghost task list layout, apply completed state opacity, and adjust mobile filter chip spacing",
+        "body": ""
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.17",
+    "date": "2026-05-15",
+    "commits": [
+      {
+        "hash": "6995e24",
+        "heading": "test: stabilize test suite and resolve css lint regressions",
+        "body": "- Hardened mocks for AppShell, MobileScrolling, and SwipeableTaskContent tests\n- Fixed DND position calculation mocks in DndPositionBug test\n- Reverted Sonner mobile toast from translate to transform to satisfy Tailwind linting\n- Suppressed tailwindcss/no-important warnings in globals.css for required overrides\n- Cleaned up unused variables and explicit any types in unit tests\n- Verified stabilization with 58 passing tests and green production build\n- Updated STATE.md with verification summary (260515-verify)"
+      },
+      {
+        "hash": "a2eae38",
+        "heading": "fix(53-15): resolve persistent snap-back and positioning bugs",
+        "body": "- Fix all-zero day_order monotonicity bug in computeReorderPairs\n- Implement deferred lock release in TaskBoard via useEffect\n- Gate CSS transitions on transform presence in sortable task cards\n- Patch stale closures and missing index guards in Board handleDragOver\n- Apply ink & matte brand styling to RecurrencePicker mode toggles\n- Archive comprehensive DnD audit and diagnostic docs to resolved folder"
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.16",
+    "date": "2026-05-13",
+    "commits": [
+      {
+        "hash": "0a45cf9",
+        "heading": "fix(changelog): invalidate cache when new version detected by poller, fix stale preview.13 showing after deploy",
+        "body": ""
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.15",
+    "date": "2026-05-13",
+    "commits": [
+      {
+        "hash": "da2ac2e",
+        "heading": "feat(53-14): add 24hr mode to SegmentedTimePicker + haptic feedback to quick-select buttons",
+        "body": "- Add timeFormat prop to SegmentedTimePicker with 12h/24h/system support\n- Hide AM/PM segment and display 0-23 hours in 24hr mode\n- Detect system locale via Intl.DateTimeFormat for 'system' option\n- Replace trigger(toggle) with trigger(tick) for Today/Tomorrow/Evening quick-select buttons"
+      },
+      {
+        "hash": "722a68a",
+        "heading": "feat(53-14): wire useTimeFormat into all display components + system locale",
+        "body": "- Add Intl.DateTimeFormat system locale detection to useTimeFormat hook\n- Add formatDateWithTime helper for combined date+time formatting\n- Replace all 8 hardcoded 'h:mm a' format strings with useTimeFormat calls\n- Implement system locale option in useTimeFormat\n- Remove unused data-time-format attribute from layout.tsx"
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.14",
+    "date": "2026-05-13",
+    "commits": [
+      {
+        "hash": "97a01a7",
+        "heading": "fix(changelog): align What's New indicator with Ink & Matte design, answer performance question",
+        "body": ""
+      },
+      {
+        "hash": "cac820a",
+        "heading": "feat(changelog): robust version detection with soft indicator, polling, and auto-injected version",
+        "body": "- Auto-inject NEXT_PUBLIC_APP_VERSION from package.json in next.config.ts\n- Add lastDismissedVersion to uiStore (migrates from lastSeenVersion)\n- Skip changelog popup on first visit (no new-user spam)\n- Poll changelog.json + visibilitychange listener to detect server deploys\n- Show soft \"What's New\" indicator instead of auto-opening modal\n- Remove stale hardcoded version fallbacks from components"
+      },
+      {
+        "hash": "3ddcf40",
+        "heading": "feat(53-13): enhance notification system by moving Toaster, adjusting z-index, and refining styles",
+        "body": ""
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.13",
+    "date": "2026-05-12",
+    "commits": [
+      {
+        "hash": "a681c26",
+        "heading": "feat(53-12): restore guest account settings and enhance import functionality",
+        "body": "- Implemented changes to allow guest users to access Backup/Sync settings while hiding the \"Delete Cloud Data\" button.\n- Updated `SettingsClient.tsx` to conditionally render account options based on guest mode.\n- Added new utility functions for handling uhabits import errors and improved the import process to handle duplicates and remap IDs correctly.\n- Enhanced the `mapUhabitsToKanso` function to include color mapping and icon inference based on habit names.\n- Added tests for uhabits import functionality and error classification to ensure robustness.\n- Updated package.json to include a script for copying the WASM file during preparation."
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.12",
+    "date": "2026-05-11",
+    "commits": [
+      {
+        "hash": "5951a8e",
+        "heading": "chore(quick): check build using npm run build (passes clean)",
+        "body": ""
+      },
+      {
+        "hash": "2d56c62",
+        "heading": "fix(focus): persist slider and switch changes via watch() subscription",
+        "body": "Removed the `type === \"change\"` guard in the watch() callback that blocked\npersistence for programmatic setValue() calls. Native DOM inputs set type\nto \"change\" but sliders/switches call setValue() with type: undefined,\nso settings were never saved when using sliders or toggles. The safeParse\ncall already guards against invalid values — no type guard needed.\n\nAdds regression test covering the slider → setValue → watch → updateSettings\npath that was previously untested and broken.\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+      },
+      {
+        "hash": "4f4ebdf",
+        "heading": "fix(timer): resolve focus settings toggles broken by React Compiler",
+        "body": "- Replace watch(\"field\") with useWatch({ control, name }) in SettingsForm for\n  React Compiler compatibility — watch() uses an internal pub/sub mechanism the\n  compiler cannot track, causing memoized components to skip re-renders on\n  setValue() calls (toggles and sliders appeared stuck)\n- Stabilize updateSettings useEffect dependency via useRef pattern to prevent\n  constant resubscription on every timer tick (TimerProvider recreates context\n  object each second due to timer.state changes)\n- Add 7 regression tests covering toggle false→true, double-toggle, both toggles\n  independent, start-from-true, and schema validation boundaries"
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.11",
+    "date": "2026-05-11",
+    "commits": [
+      {
+        "hash": "7a2dcb9",
+        "heading": "feat(53-10): changelog popup with prefetch cache, accessibility, and version scoping",
+        "body": "Core:\n- Create src/lib/changelog-cache.ts with module-level prefetch cache\n- Rewrite ChangelogPopup with instant rendering (no fetch-on-open delay)\n- Improve accessibility: font-semibold weights, full contrast colors, readable sizes\n- Scope changelog entries to current minor version (e.g. 1.19.x only)\n- Show all preview.0 through current preview entries\n\nPipeline:\n- preview.sh: intelligent base commit selection (merge sync for preview.0, last preview for preview.1+)\n- Fix changelog.json: preview.0 had 241 ancient commits, reduced to 1 (c9c9409)\n- Exclude planning/agent/gemini/husky/vercelignore from commit logs\n\nUpdated planning artifacts: ROADMAP.md, STATE.md, 53-10-SUMMARY.md"
+      },
+      {
+        "hash": "2ec6cf3",
+        "heading": "fix(build): replace missing @base-ui/react/use-render, install @radix-ui/react-scroll-area, fix pre-existing lint issues in filters.tsx",
+        "body": ""
+      },
+      {
+        "hash": "3d34e38",
+        "heading": "build: add vercel package to dependencies",
+        "body": ""
+      }
+    ]
+  },
+  {
+    "version": "unreleased",
+    "date": "2026-05-11",
+    "commits": [
+      {
+        "hash": "2ec6cf3",
+        "heading": "fix(build): replace missing @base-ui/react/use-render, install @radix-ui/react-scroll-area, fix pre-existing lint issues in filters.tsx",
+        "body": ""
+      },
+      {
+        "hash": "3d34e38",
+        "heading": "build: add vercel package to dependencies",
+        "body": ""
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.10",
+    "date": "2026-05-11",
+    "commits": [
+      {
+        "hash": "fe93435",
+        "heading": "feat(tasks): unify smart filter system and optimize performance",
+        "body": "- Consolidate filter triggers and indicators into a unified Smart Button system\n- Implement React 18 transitions for filter updates to ensure interaction fluidity\n- Refactor mobile indicators into a native touch-scroll track to resolve clipping\n- Prevent mobile scroll bounce with touch-action and overscroll containment\n- Optimize task list and board synchronization to eliminate DnD initialization lag\n- Implement state hydration tracking and safety script in app/layout.tsx\n- Add unit tests for uiStore hydration logic\n- Fix pre-existing library build errors in filters.tsx and upscale desktop aesthetics\n- Archive resolved debug session logs for Phase 53-09 hardening"
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.9",
+    "date": "2026-05-07",
+    "commits": [
+      {
+        "hash": "e44ffc3",
+        "heading": "feat(habits): implement Loop Habit Tracker import and harden habit UI",
+        "body": "- Implement Loop Habit Tracker (.db) import engine using sql.js\n- Create shared hooks useUhabitsImport and useIcsImport for unified migration logic\n- Implement HabitOptionsMenu on Habits page with direct file picker access\n- Harden Habit creation/edit UI with reduced vertical padding and spacing\n- Fix Habits page header layout alignment for mobile devices\n- Restore direct ICS import functionality to Settings menu\n- Update branding from UHabits to Loop Habit Tracker across UI and hooks\n- Add comprehensive unit tests for Loop Habit Tracker data mapping"
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.8",
+    "date": "2026-05-07",
+    "commits": [
+      {
+        "hash": "9992ba7",
+        "heading": "feat(ui): polish mobile UX and unify project visuals",
+        "body": "- Implement swipe-based navigation for mobile calendar views\n- Optimize MonthView cell visibility and fix mobile clipping (Quick Task)\n- Remove redundant project text tags from all task views (Quick Task)\n- Simplify mobile calendar header by removing navigation arrows (Quick Task)\n- Fix 'Schedule' text cut-off in mobile view selector"
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.7",
+    "date": "2026-05-07",
+    "commits": [
+      {
+        "hash": "47ad4a3",
+        "heading": "fix: Resolve Task DnD grouping and meta tag sync issues",
+        "body": "- Fix overdue tasks incorrectly moving to Today during reordering in date groups\n- Synchronize due_date with do_date when moving tasks between date groups\n- Preserve is_evening status during reordering in all grouped views\n- Add unit tests to verify task-dnd logic and prevent regressions\n- Update planning artifacts with quick task details"
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.6",
+    "date": "2026-05-07",
+    "commits": [
+      {
+        "hash": "2be750e",
+        "heading": "feat(ui): harden modal accessibility and refine view-specific task visuals",
+        "body": "- Hardened modal keyboard accessibility by optimizing Escape key handling in GlobalHotkeys and relying on native Radix UI dismissal for Sheets and Dialogs\n- Verified and implemented proper focus traps and ARIA attributes across all core modal components for structural accessibility\n- Reverted shared visual unification in favor of distinct view-specific identities, restoring the original Flag icon priority rendering\n- Refined TaskGhost specifically for the Board view: reduced base width to 280px, implemented vertical layout, and added the evening moon indicator\n- Optimized DragOverlay scaling and rotation across Board and List views for more subtle, professional animations\n- Updated TaskSheet to default subtask visibility to collapsed when editing to reduce initial interface clutter\n- Fixed visibility logic to ensure completed repeated tasks are correctly rendered in the Mobile Grid view\n- Updated phase 53-06 planning and summary documentation and removed obsolete imports"
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.5",
+    "date": "2026-05-07",
+    "commits": [
+      {
+        "hash": "02e4d56",
+        "heading": "fix(ui): resolve desktop list dnd layout shift by hardening container boundaries",
+        "body": ""
+      },
+      {
+        "hash": "b6c9401",
+        "heading": "fix(ui): apply strict containment to task list scroll container",
+        "body": "- Added `contain: strict` and `position: relative` to `TaskList` scroll container.\n- Prevented layout recalculation propagation to the page root during high-frequency dnd-kit auto-scroll events.\n- Verified fix against `DndLayoutShift.test.tsx`."
+      },
+      {
+        "hash": "17155bc",
+        "heading": "feat(260506-rgt): refine dnd autoScroll canScroll logic",
+        "body": "- Exclude BODY and HTML elements from auto-scroll to prevent layout clipping\n- Keep existing no-dnd-scroll class check"
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.4",
+    "date": "2026-05-06",
+    "commits": [
+      {
+        "hash": "f6d505e",
+        "heading": "fix: align mobile and desktop list view spacing by removing inner rounded corners and fixing border overlap",
+        "body": ""
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.3",
+    "date": "2026-05-05",
+    "commits": [
+      {
+        "hash": "934d1dc",
+        "heading": "feat(tasks): enhance drag-and-drop with cross-group mutations and auto-scroll",
+        "body": ""
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.2",
+    "date": "2026-05-05",
+    "commits": [
+      {
+        "hash": "36cc9fb",
+        "heading": "feat: implement data sovereignty for registered users",
+        "body": "- Add useAccountData hook for cloud data export/import/deletion\n- Update BackupSyncSettings to support cloud data operations\n- Make DeleteUserDataDialog context-aware for registered users\n- Enable data management controls in SettingsClient for all users\n- Add unit tests for useAccountData hook"
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.1",
+    "date": "2026-05-05",
+    "commits": [
+      {
+        "hash": "ba8eb5b",
+        "heading": "feat(task): implement strict vs flexible task recurrence",
+        "body": "- Added 'mode' field to RecurrenceRule and Task schemas\n- Updated calculateNextDueDate to support Strict vs Flexible recurrence logic\n- Added recurrence_settings column to database schema and migrations\n- Updated RecurrencePicker UI with mode toggle\n- Added unit tests for recurrence logic\n- Updated roadmap status"
+      }
+    ]
+  },
+  {
+    "version": "1.19.2-preview.0",
+    "date": "2026-05-05",
+    "commits": [
+      {
+        "hash": "c9c9409",
+        "heading": "feat: implement global 12hr/24hr time format preference",
+        "body": "- Added timeFormat and setTimeFormat to uiStore with persistence\n- Created useTimeFormat hook for centralized time formatting using date-fns\n- Added Time Format selection (12h, 24h, system) to Settings Preferences tab\n- Added unit tests for time formatting logic in useTimeFormat.test.ts"
+      }
+    ]
+  }
+]

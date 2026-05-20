@@ -1,0 +1,81 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# PWA files
+/public/sw.js
+/public/sw.js.map
+/public/swe-worker-*.js
+/public/swe-worker-*.js.map
+/public/workbox-*.js
+/public/workbox-*.js.map
+/public/tsbuildinfo
+
+# sql.js WASM binary (copied from node_modules by `npm run copy-wasm` / prepare)
+/public/sql-wasm.wasm
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Supabase
+/supabase/.temp
+
+# Test logs
+tests/unit/*.txt
+
+# Docker data
+/docker_data/
+
+.vercel/
+
+/.planning/
+/.agent/
+/.gemini/
+/.serena/
+/.husky/
+/.claude/

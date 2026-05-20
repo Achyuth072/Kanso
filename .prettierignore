@@ -1,0 +1,17 @@
+.next
+node_modules
+dist
+coverage
+.next
+out
+build
+public
+*.min.js
+package-lock.json
+.serena
+.planning
+.agent
+.gemini
+.idea
+.vscode
+.git

@@ -1,0 +1,595 @@
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+@plugin "@tailwindcss/typography";
+
+/* eslint-disable tailwindcss/no-invalid-at-rules */
+@custom-variant dark (&:is(.dark *));
+
+/* Theme configuration for Tailwind v4 */
+@theme inline {
+  /* Radius tokens */
+  --radius: 0.625rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Typography - Zen-Modernist */
+  --font-sans:
+    var(--font-inter), ui-sans-serif, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", "Inter", "Roberta", sans-serif;
+  --font-serif: "Lyon-Text", "Georgia", serif;
+  --font-mono:
+    var(--font-jetbrains), "SFMono-Regular", "Menlo", "JetBrains Mono",
+    monospace;
+
+  /* Color tokens - mapped to CSS variables */
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-brand: hsl(var(--brand));
+  --color-brand-foreground: hsl(var(--brand-foreground));
+
+  /* Sidebar colors */
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  /* Animations */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  /* Seijaku Physics - Energized Calm */
+  /* The "Settled" Spring: Quick response, no bounce, immediate damping */
+  --ease-seijaku: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Legacy Springs (kept for compatibility) */
+  --ease-spring-s: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-spring-m: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring-bouncy: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  /* Framer Motion Constants (for JS animations) */
+  /* Use these in motion components:
+     transition={{ type: "spring", mass: 1, stiffness: 280, damping: 60 }}
+     - mass: 1 (standard weight)
+     - stiffness: 280 (quick response)
+     - damping: 60 (heavy damping, no overshoot)
+  */
+  --kanban-board-circle-primary: var(--primary);
+  --color-kanban-board-circle-yellow: var(--kanban-board-circle-yellow);
+  --color-kanban-board-circle-violet: var(--kanban-board-circle-violet);
+  --color-kanban-board-circle-red: var(--kanban-board-circle-red);
+  --color-kanban-board-circle-purple: var(--kanban-board-circle-purple);
+  --color-kanban-board-circle-pink: var(--kanban-board-circle-pink);
+  --color-kanban-board-circle-indigo: var(--kanban-board-circle-indigo);
+  --color-kanban-board-circle-green: var(--kanban-board-circle-green);
+  --color-kanban-board-circle-gray: var(--kanban-board-circle-gray);
+  --color-kanban-board-circle-cyan: var(--kanban-board-circle-cyan);
+  --color-kanban-board-circle-blue: var(--kanban-board-circle-blue);
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+/* Light mode variables - Zen-Modernist (Matte & Ink) */
+:root {
+  --background: 40 20% 99%; /* #FCFCFA - Warm Washi */
+  --foreground: 0 0% 18%; /* #2E2E2E - Ink */
+  --card: 40 20% 99%;
+  --card-foreground: 0 0% 18%;
+  --popover: 40 20% 99%;
+  --popover-foreground: 0 0% 18%;
+  --primary: 0 0% 18%; /* Ink for primary actions */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 60 9% 96%; /* #F7F7F5 - Kept for sidebar */
+  --secondary-foreground: 0 0% 18%;
+  --muted: 60 9% 96%;
+  --muted-foreground: 0 0% 46%; /* #757575 - Adjusted */
+  --accent: 60 9% 96%;
+  --accent-foreground: 0 0% 18%;
+  --destructive: 12 38% 53%; /* #B56C5A - Terracotta */
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 80%; /* #CCCCCC - Significant increase for high visibility in Light Mode */
+  --input: 0 0% 80%;
+  --ring: 0 0% 18%;
+  --brand: 220 44% 50%; /* #4B6CB7 - Kanso Blue */
+  --brand-foreground: 0 0% 100%; /* White */
+  --sidebar: 60 9% 96%;
+  --sidebar-foreground: 0 0% 18%;
+  --sidebar-primary: 220 44% 50%; /* Kanso Blue for active states */
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 60 5% 91%;
+  --sidebar-accent-foreground: 0 0% 18%;
+  --sidebar-border: 60 5% 91%;
+  --sidebar-ring: 0 0% 18%;
+  --kanban-board-circle-blue: oklch(0.6232 0.1879 259.8);
+  --kanban-board-circle-cyan: oklch(0.7146 0.1256 215.13);
+  --kanban-board-circle-gray: oklch(0.5513 0.0233 264.36);
+  --kanban-board-circle-green: oklch(0.7229 0.1921 149.58);
+  --kanban-board-circle-indigo: oklch(0.586 0.2037 277.12);
+  --kanban-board-circle-pink: oklch(0.6559 0.2117 354.34);
+  --kanban-board-circle-purple: oklch(0.6267 0.2325 303.86);
+  --kanban-board-circle-red: oklch(0.6368 0.2078 25.33);
+  --kanban-board-circle-violet: oklch(0.6059 0.2187 292.72);
+  --kanban-board-circle-yellow: oklch(0.7959 0.1618 86.05);
+}
+
+/* Dark mode variables - Zen-Modernist (Sumi Ink) */
+.dark {
+  --background: 0 0% 10%; /* #1A1A1A - Sumi Ink */
+  --foreground: 0 0% 90%; /* #E5E5E5 - Lighter for contrast */
+  --card: 0 0% 13%; /* #222222 - Charcoal */
+  --card-foreground: 0 0% 90%;
+  --popover: 0 0% 13%;
+  --popover-foreground: 0 0% 90%;
+  --primary: 0 0% 90%; /* Light Ink for dark mode */
+  --primary-foreground: 0 0% 10%;
+  --secondary: 0 0% 13%; /* #202020 */
+  --secondary-foreground: 0 0% 90%;
+  --muted: 0 0% 13%;
+  --muted-foreground: 0 0% 63%; /* #A1A1A1 */
+  --accent: 0 0% 13%;
+  --accent-foreground: 0 0% 90%;
+  --destructive: 12 30% 45%; /* Deep Terracotta */
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 26%; /* #424242 - Refined to 30% increase from original 20% */
+  --input: 0 0% 26%;
+  --ring: 0 0% 90%;
+  --brand: 220 44% 50%; /* #4B6CB7 - Kanso Blue */
+  --brand-foreground: 0 0% 100%; /* White */
+  --sidebar: 0 0% 13%;
+  --sidebar-foreground: 0 0% 90%;
+  --sidebar-primary: 220 44% 50%; /* Kanso Blue for active states */
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 0% 20%;
+  --sidebar-accent-foreground: 0 0% 90%;
+  --sidebar-border: 0 0% 20%;
+  --sidebar-ring: 0 0% 90%;
+  --kanban-board-circle-blue: oklch(0.7135 0.1435 254.61);
+  --kanban-board-circle-cyan: oklch(0.7973 0.1339 211.45);
+  --kanban-board-circle-gray: oklch(0.7137 0.0192 261.33);
+  --kanban-board-circle-green: oklch(0.8003 0.1823 151.7);
+  --kanban-board-circle-indigo: oklch(0.6797 0.1586 276.96);
+  --kanban-board-circle-pink: oklch(0.7253 0.1752 349.74);
+  --kanban-board-circle-purple: oklch(0.7218 0.1766 305.51);
+  --kanban-board-circle-red: oklch(0.7108 0.166 22.21);
+  --kanban-board-circle-violet: oklch(0.7093 0.1589 293.52);
+  --kanban-board-circle-yellow: oklch(0.8601 0.173 91.84);
+}
+
+/* Base layer styles */
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  :root {
+    --color-kanban-board-circle-blue: var(--kanban-board-circle-blue);
+    --color-kanban-board-circle-cyan: var(--kanban-board-circle-cyan);
+    --color-kanban-board-circle-gray: var(--kanban-board-circle-gray);
+    --color-kanban-board-circle-green: var(--kanban-board-circle-green);
+    --color-kanban-board-circle-indigo: var(--kanban-board-circle-indigo);
+    --color-kanban-board-circle-pink: var(--kanban-board-circle-pink);
+    --color-kanban-board-circle-primary: var(--kanban-board-circle-primary);
+    --color-kanban-board-circle-purple: var(--kanban-board-circle-purple);
+    --color-kanban-board-circle-red: var(--kanban-board-circle-red);
+    --color-kanban-board-circle-violet: var(--kanban-board-circle-violet);
+    --color-kanban-board-circle-yellow: var(--kanban-board-circle-yellow);
+  }
+}
+
+/* Mobile optimizations & viewport constraint */
+html,
+body {
+  height: 100dvh;
+  overscroll-behavior: none;
+  overflow: hidden;
+}
+
+* {
+  /* eslint-disable-next-line tailwindcss/no-invalid-properties, tailwindcss/use-baseline */
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+[role="button"],
+input[type="checkbox"],
+input[type="radio"] {
+  user-select: none;
+}
+
+/* Vaul Drawer - Faster close animation for responsive back navigation */
+/* eslint-disable tailwindcss/no-important */
+[vaul-drawer] {
+  transition: transform 120ms cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+[vaul-drawer][vaul-drawer-direction="bottom"] {
+  transition: transform 120ms cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+/* eslint-enable tailwindcss/no-important */
+
+input,
+textarea,
+select {
+  font-size: 16px;
+}
+
+/* Zen-Modernist Typography - The Editorial Voice */
+@layer utilities {
+  /* H1 - Page Titles */
+  .type-h1 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  @media (min-width: 768px) {
+    .type-h1 {
+      font-size: 32px;
+    }
+  }
+
+  /* H2 - Section Headers */
+  .type-h2 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  @media (min-width: 768px) {
+    .type-h2 {
+      font-size: 24px;
+    }
+  }
+
+  /* H3 - Card Headers */
+  .type-h3 {
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+
+  /* Body - Primary Content */
+  .type-body {
+    font-size: 16px; /* Mobile-first: prevents iOS zoom */
+    font-weight: 400;
+    letter-spacing: normal;
+    line-height: 1.5;
+  }
+
+  @media (min-width: 768px) {
+    .type-body {
+      font-size: 15px;
+    }
+  }
+
+  /* UI/Label - Metadata, Tags */
+  .type-ui {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    line-height: 1;
+  }
+
+  /* Micro - Helpers, Footers */
+  .type-micro {
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+
+  /* Touch - Explicit 16px for inputs (mobile) */
+  .type-touch {
+    /* eslint-disable-next-line tailwindcss/no-important */
+    font-size: 16px !important;
+  }
+
+  /* Seijaku Transition - The "Settled" Feel */
+  .transition-seijaku {
+    transition-timing-function: var(--ease-seijaku);
+    transition-duration: 300ms;
+  }
+
+  /* Seijaku variants for different durations */
+  .transition-seijaku-fast {
+    transition-timing-function: cubic-bezier(0.1, 1, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .transition-seijaku-slow {
+    transition-timing-function: var(--ease-seijaku);
+    transition-duration: 500ms;
+  }
+
+  /* Ma (Negative Space) - Safe Area Utilities */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Touch Targets - Minimum 44px for mobile */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Sumi Red - Destructive Action Identity */
+  .sumi-red-action {
+    color: hsl(var(--destructive));
+  }
+
+  .sumi-red-action:hover,
+  .sumi-red-action[data-highlighted],
+  .sumi-red-action[data-state="active"] {
+    /* eslint-disable-next-line tailwindcss/no-important */
+    background-color: hsl(var(--destructive) / 0.1) !important;
+    /* eslint-disable-next-line tailwindcss/no-important */
+    color: hsl(var(--destructive)) !important;
+  }
+
+  /* Kanso Task Completion - Ink & Matte Style */
+  .task-ink-completed {
+    opacity: 0.4;
+    transition:
+      opacity 500ms ease-out,
+      filter 500ms ease-out;
+  }
+}
+
+/* Task completion card styles — defined OUTSIDE @layer utilities so they have
+   higher cascade priority than Tailwind bg-* and hover:bg-* utilities */
+/* eslint-disable tailwindcss/no-important */
+.task-ink-completed-card {
+  opacity: 0.5 !important;
+  filter: grayscale(1) contrast(0.9) brightness(0.9) !important;
+  transition:
+    opacity 700ms ease-out,
+    filter 700ms ease-out !important;
+  pointer-events: auto !important;
+}
+
+.task-ink-completed-card:hover {
+  opacity: 0.75 !important;
+  filter: grayscale(0.6) contrast(1) brightness(1) !important;
+}
+
+.dark .task-ink-completed-card {
+  opacity: 0.45 !important;
+  filter: grayscale(1) contrast(0.8) brightness(0.8) !important;
+}
+
+.dark .task-ink-completed-card:hover {
+  opacity: 0.7 !important;
+  filter: grayscale(0.5) contrast(1) brightness(1) !important;
+}
+
+.task-ink-completed-text {
+  position: relative;
+  display: inline-block;
+}
+
+.task-ink-completed-text::after {
+  content: "";
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  top: 55%;
+  height: 1.25px;
+  background: currentColor;
+  transform: scaleX(1);
+  transform-origin: left;
+  transition: none !important;
+  animation: none !important;
+}
+
+.task-ink-completed-text[data-animate="true"]::after {
+  animation: task-strike-in 0.4s var(--ease-seijaku) 0.1s forwards !important;
+  transform: scaleX(0);
+}
+/* eslint-enable tailwindcss/no-important */
+
+@keyframes task-strike-in {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    scrollbar-width: none;
+  }
+  .no-select {
+    user-select: none;
+  }
+}
+@layer utilities {
+  .appearance-none {
+    appearance: none;
+  }
+}
+@layer components {
+  option {
+    @apply bg-popover text-popover-foreground;
+  }
+}
+
+@layer utilities {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(
+      in srgb,
+      var(--color-muted-foreground),
+      transparent 75%
+    );
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(
+      in srgb,
+      var(--color-muted-foreground),
+      transparent 50%
+    );
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(
+        in srgb,
+        var(--color-muted-foreground),
+        transparent 75%
+      )
+      transparent;
+  }
+
+  /* Custom Scrollbar Utility */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: color-mix(
+      in srgb,
+      var(--color-muted-foreground),
+      transparent 80%
+    );
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: color-mix(
+      in srgb,
+      var(--color-muted-foreground),
+      transparent 60%
+    );
+  }
+
+  /* Resizable panel collapse animation */
+  [data-panel] {
+    transition: flex-grow 300ms var(--ease-seijaku);
+  }
+
+  /* Scrollbar Management */
+  .scrollbar-none {
+    scrollbar-width: none; /* Firefox */
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none; /* Chromium and Safari */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Sonner Toast Positioning Overrides
+ *
+ * DESKTOP (≥601px): Sonner v2 centers the toaster container via left:50%+translateX(-50%).
+ * Individual unstyled toasts need an explicit width and the same centering so they don't
+ * anchor to left:0 of the container. The override below restores that. (Fixes #MOBILE-92)
+ *
+ * MOBILE (≤600px): Sonner v2 sets the toaster to position:fixed; left:16px; width:100vw.
+ * Individual toasts are positioned with left:0; right:0; width:calc(100% - 32px) = 328px.
+ * This produces 16px margins on both sides — BUT only when no explicit width is set.
+ *
+ * The toast classNames in notification.tsx include `w-fit` (width:fit-content), which
+ * defeats Sonner's width:calc(100% - 32px). With width:fit-content + position:absolute,
+ * `left:0` wins in LTR and the toast snaps left — 16px from viewport, 0px right margin.
+ *
+ * Fix: Re-assert Sonner's intended width calculation with !important to defeat w-fit.
+ * Keep left:0 (Sonner's own approach). The width override is the only change needed.
+ * No margin:auto is used — the toaster is already offset 16px, so centering within
+ * it would add a second 16px shift (left=32px, right=0px — worse than the original bug).
+ */
+/* eslint-disable tailwindcss/no-important */
+@media (min-width: 601px) {
+  [data-sonner-toaster][data-x-position="center"] [data-sonner-toast] {
+    transform: translateX(-50%) !important;
+    left: 50% !important;
+    width: calc(100vw - 2rem) !important;
+    max-width: 400px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Defeat `w-fit` from notification.tsx so Sonner's left:0 + width strategy works
+     correctly. The computed width equals (toaster width) - 2*(mobileOffset.left)
+     = 100vw - 32px = 328px at 360px viewport → 16px visual margin on each side. */
+  [data-sonner-toaster][data-x-position="center"] [data-sonner-toast] {
+    width: calc(100% - var(--mobile-offset-left, 16px) * 2) !important;
+  }
+}
+/* eslint-enable tailwindcss/no-important */

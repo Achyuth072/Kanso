@@ -1,0 +1,22 @@
+services:
+  webdav:
+    image: bytemark/webdav
+    ports:
+      - "8080:80"
+    volumes:
+      - ./docker_data/webdav:/var/lib/dav/data:rw
+    environment:
+      - USERNAME=kanso
+      - PASSWORD=zen123
+    restart: always
+
+  caldav:
+    image: tomsquest/docker-radicale
+    ports:
+      - "5232:5232"
+    volumes:
+      - ./docker_data/radicale:/data:rw
+      - ./tests/sync:/config:ro
+    environment:
+      - TAKE_FILE_OWNERSHIP=true
+    restart: always
