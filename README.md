@@ -1,14 +1,6 @@
 # Kanso (FocusM3)
 
-_"The void is not empty; it is full of possibility."_
-
-Kanso is a **Zen-Modernist** task management and focus tool. It fuses the Japanese philosophy of **Kanso** (simplicity) with **Swiss Modernism** to create a quiet, high-density environment for deep work.
-
-## Core Philosophy: Zen-Modernism
-
-- **Ma (The Void)**: We use active negative space to organize content, not borders or shadows.
-- **Seijaku (Calm)**: All interactions feature physical, dampened weight for an energized sense of calm.
-- **Ink & Matte**: High-contrast typography ("Ink") on flat, soft-matte surfaces.
+Kanso is a **Zen-Modernist** task management and focus tool. It fuses the Japanese philosophy of **Kanso** (simplicity) with **Modernism** to create a quiet, high-density environment for deep work.
 
 ## Key Workflows
 
