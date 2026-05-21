@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useTimerStore } from "@/lib/store/timerStore";
 import { DEFAULT_TIMER_SETTINGS } from "@/lib/types/timer";
+import { useTimerSync } from "@/lib/hooks/useTimerSync";
 
 // ===== Hoisted mocks for module-level mocking =====
 
