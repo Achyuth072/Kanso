@@ -6,13 +6,12 @@ import { FullscreenToggle } from "@/components/FullscreenToggle";
 
 // ===== Hoisted mocks =====
 
-const { mockSetIsFullscreen, mockSetIsPipActive, mockTrigger } = vi.hoisted(
-  () => ({
+const { mockSetIsFullscreen, mockSetIsPipActive, mockTrigger } =
+  vi.hoisted(() => ({
     mockSetIsFullscreen: vi.fn(),
     mockSetIsPipActive: vi.fn(),
     mockTrigger: vi.fn(),
-  }),
-);
+  }));
 
 // ===== Mock control variables (modified per test) =====
 
@@ -53,7 +52,12 @@ vi.mock("framer-motion", () => ({
     button: React.forwardRef<HTMLButtonElement, React.ComponentProps<"button">>(
       ({ children, onClick, className, ...props }, ref) => {
         return (
-          <button ref={ref} onClick={onClick} className={className} {...props}>
+          <button
+            ref={ref}
+            onClick={onClick}
+            className={className}
+            {...props}
+          >
             {children}
           </button>
         );
@@ -66,8 +70,12 @@ vi.mock("framer-motion", () => ({
 }));
 
 vi.mock("lucide-react", () => ({
-  Maximize2: (props: any) => <svg data-testid="maximize2-icon" {...props} />,
-  Minimize2: (props: any) => <svg data-testid="minimize2-icon" {...props} />,
+  Maximize2: (props: any) => (
+    <svg data-testid="maximize2-icon" {...props} />
+  ),
+  Minimize2: (props: any) => (
+    <svg data-testid="minimize2-icon" {...props} />
+  ),
 }));
 
 // ===== Test suite =====
@@ -135,19 +143,24 @@ describe("useFullscreen", () => {
     expect(mockSetIsFullscreen).toHaveBeenCalledWith(true);
   });
 
-  // --- Test 3: Entering fullscreen no longer directly calls setIsPipActive ---
+  // --- Test 3: Entering fullscreen dismisses PiP first (mutual exclusion) ---
 
-  it("should NOT call setIsPipActive directly (PiPProvider reactive effect handles dismissal)", async () => {
+  it("should dismiss PiP before entering fullscreen (mutual exclusion D-09)", async () => {
     const { result } = renderHook(() => useFullscreen());
 
     await act(async () => {
       await result.current.enterFullscreen();
     });
 
-    // setIsPipActive(false) should NOT be called — PiPProvider handles it reactively
-    expect(mockSetIsPipActive).not.toHaveBeenCalled();
-    // setIsFullscreen(true) must be called
+    // setIsPipActive(false) must be called
+    expect(mockSetIsPipActive).toHaveBeenCalledWith(false);
+    // setIsFullscreen(true) must also be called
     expect(mockSetIsFullscreen).toHaveBeenCalledWith(true);
+
+    // Verify order: setIsPipActive called before setIsFullscreen
+    const pipOrder = mockSetIsPipActive.mock.invocationCallOrder[0];
+    const fsOrder = mockSetIsFullscreen.mock.invocationCallOrder[0];
+    expect(pipOrder).toBeLessThan(fsOrder!);
   });
 
   // --- Test 4: exitFullscreen calls document.exitFullscreen() on desktop ---
