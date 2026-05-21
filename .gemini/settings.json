@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "serena": {
+      "command": "/home/achyuth/.local/bin/serena",
+      "args": [
+        "start-mcp-server",
+        "--project-from-cwd"
+      ]
+    }
+  }
+}
