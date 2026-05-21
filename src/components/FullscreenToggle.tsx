@@ -17,10 +17,6 @@ import { buttonVariants } from "@/components/ui/button";
  * - Minimize2 icon when fullscreen (text-brand active color)
  * - Haptic: toggle on tap
  * - ARIA labels for accessibility
- *
- * Bordered to differentiate from the borderless ghost PiP button — both
- * share the round h-14 w-14 silhouette. The border is subtle (border/40
- * by default, brand/40 when fullscreen) and adapts to light/dark theme.
  */
 
 export function FullscreenToggle() {
@@ -43,6 +39,7 @@ export function FullscreenToggle() {
       className={cn(
         buttonVariants({ variant: "ghost", size: "icon" }),
         "absolute top-4 right-4 h-14 w-14 rounded-full active:scale-95 transition-seijaku cursor-pointer",
+        isFullscreen && "text-brand",
       )}
       aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
     >
