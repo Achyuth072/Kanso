@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useUiStore } from "@/lib/store/uiStore";
 import { removePushSubscription, syncPushSubscription } from "@/lib/push-api";
 
@@ -38,6 +38,9 @@ export function usePushNotifications() {
     null,
   );
   const [isSyncing, setIsSyncing] = useState(false);
+
+  // Track last-known subscription endpoint for detecting auto-rotation (Chrome Android)
+  const subscriptionEndpointRef = useRef<string | null>(null);
 
   // Helper to wait for service worker with timeout
   const getServiceWorkerRegistration = useCallback(async () => {
@@ -248,6 +251,62 @@ export function usePushNotifications() {
     sendSubscriptionToBackend,
     subscribeToPush,
     getServiceWorkerRegistration,
+  ]);
+
+  // Update the subscription endpoint ref whenever the subscription changes
+  useEffect(() => {
+    if (subscription) {
+      subscriptionEndpointRef.current = subscription.endpoint;
+    }
+  }, [subscription]);
+
+  // Re-validate push subscription on visibility change (tab regains focus)
+  // This catches Chrome Android's auto-rotated subscriptions and ensures
+  // the server always has a fresh endpoint
+  useEffect(() => {
+    if (!isSupported || !notificationsEnabled) return;
+
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState !== "visible") return;
+
+      try {
+        const registration = await getServiceWorkerRegistration();
+        const currentSub = await registration.pushManager.getSubscription();
+
+        if (currentSub) {
+          // Detect endpoint change (Chrome auto-rotation) for logging
+          if (currentSub.endpoint !== subscriptionEndpointRef.current) {
+            console.log(
+              "[Push] Subscription endpoint changed, syncing new endpoint",
+            );
+          }
+
+          // Always sync the subscription to backend for freshness,
+          // even if the endpoint hasn't changed
+          setSubscription(currentSub);
+          await sendSubscriptionToBackend(currentSub);
+          subscriptionEndpointRef.current = currentSub.endpoint;
+        } else if (permission === "granted") {
+          // Subscription was lost, re-subscribe
+          await subscribeToPush();
+        }
+      } catch (error) {
+        console.error("Error re-validating push subscription:", error);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [
+    isSupported,
+    notificationsEnabled,
+    permission,
+    getServiceWorkerRegistration,
+    sendSubscriptionToBackend,
+    subscribeToPush,
   ]);
 
   return {
