@@ -69,17 +69,19 @@ export const focusMutations = {
     const user = session?.user;
     if (!user) throw new Error("Not authenticated");
 
-    const { error } = await supabase.from("user_timer_state").upsert(
-      {
-        user_id,
-        mode,
-        remaining_seconds,
-        is_running,
-        active_task_id,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id" },
-    );
+    const { error } = await supabase
+      .from("user_timer_state")
+      .upsert(
+        {
+          user_id,
+          mode,
+          remaining_seconds,
+          is_running,
+          active_task_id,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" },
+      );
 
     if (error) throw new Error(error.message);
   },

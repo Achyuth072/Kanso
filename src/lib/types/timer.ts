@@ -4,10 +4,7 @@
 
 export type TimerMode = "focus" | "shortBreak" | "longBreak";
 
-export type TaskSwitchBehavior =
-  | "keepRunning"
-  | "pauseOnSwitch"
-  | "resetOnSwitch";
+export type TaskSwitchBehavior = "keepRunning" | "pauseOnSwitch" | "resetOnSwitch";
 
 export interface TimerSettings {
   focusDuration: number; // in minutes
