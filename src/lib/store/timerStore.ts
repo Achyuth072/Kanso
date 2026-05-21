@@ -16,6 +16,7 @@ interface TimerStore {
   pause: () => void;
   stop: () => void;
   cancel: () => void;
+  setActiveTaskId: (taskId: string | null) => void;
   skip: () => void;
   tick: () => void;
   updateSettings: (newSettings: Partial<TimerSettings>) => void;
@@ -94,6 +95,15 @@ export const useTimerStore = create<TimerStore>()(
             completedSessions: state.completedSessions, // PRESERVE
           },
         });
+      },
+
+      setActiveTaskId: (taskId: string | null) => {
+        set((s) => ({
+          state: {
+            ...s.state,
+            activeTaskId: taskId,
+          },
+        }));
       },
 
       skip: () => {
