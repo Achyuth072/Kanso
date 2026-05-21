@@ -127,4 +127,72 @@ describe("useTimerStore", () => {
     expect(settings.focusDuration).toBe(30);
     expect(state.remainingSeconds).toBe(1800);
   });
+
+  describe("cancel", () => {
+    it("should preserve completedSessions while resetting all other timer state", () => {
+      // Given: A running timer with 3 completed sessions and some progress
+      useTimerStore.setState((s) => ({
+        state: {
+          ...s.state,
+          isRunning: true,
+          remainingSeconds: 500,
+          completedSessions: 3,
+          activeTaskId: "task-1",
+          startedAt: Date.now(),
+        },
+      }));
+
+      // When: Cancelling the timer
+      useTimerStore.getState().cancel();
+
+      // Then: completedSessions preserved, everything else reset
+      const { state, settings } = useTimerStore.getState();
+      expect(state.mode).toBe("focus");
+      expect(state.isRunning).toBe(false);
+      expect(state.remainingSeconds).toBe(settings.focusDuration * 60);
+      expect(state.activeTaskId).toBeNull();
+      expect(state.startedAt).toBeNull();
+      expect(state.completedSessions).toBe(3);
+    });
+
+    it("should preserve completedSessions at 3 after cancel", () => {
+      // Given: A running timer with 3 completed sessions
+      useTimerStore.setState((s) => ({
+        state: {
+          ...s.state,
+          isRunning: true,
+          remainingSeconds: 800,
+          completedSessions: 3,
+          activeTaskId: "task-2",
+          startedAt: Date.now(),
+        },
+      }));
+
+      // When: Cancelling the timer
+      useTimerStore.getState().cancel();
+
+      // Then: completedSessions remains 3
+      expect(useTimerStore.getState().state.completedSessions).toBe(3);
+    });
+
+    it("should allow stop() after cancel to reset completedSessions to 0 (stop semantics unchanged)", () => {
+      // Given: A timer after cancel with completedSessions preserved at 3
+      useTimerStore.setState((s) => ({
+        state: {
+          ...s.state,
+          isRunning: false,
+          remainingSeconds: 1500,
+          completedSessions: 3,
+          activeTaskId: null,
+          startedAt: null,
+        },
+      }));
+
+      // When: Calling stop() after cancel
+      useTimerStore.getState().stop();
+
+      // Then: completedSessions resets to 0 (stop semantics unchanged)
+      expect(useTimerStore.getState().state.completedSessions).toBe(0);
+    });
+  });
 });
