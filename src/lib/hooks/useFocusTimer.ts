@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { useHaptic } from "@/lib/hooks/useHaptic";
 import { useTimerStore } from "@/lib/store/timerStore";
+import { useTimerSync } from "@/lib/hooks/useTimerSync";
 import { TimerState } from "@/lib/types/timer";
 
 type TimerCompleteEvent = CustomEvent<{
@@ -48,12 +49,19 @@ export function useFocusTimer() {
     start: storeStart,
     pause: storePause,
     stop: storeStop,
+    cancel: storeCancel,
     skip: storeSkip,
     tick,
     reconcile,
     updateSettings,
     setLoaded,
   } = useTimerStore();
+
+  const { upsertTimerState } = useTimerSync();
+
+  const syncToServer = useCallback(async () => {
+    await upsertTimerState();
+  }, [upsertTimerState]);
 
   const notificationIdRef = useRef<string | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -267,6 +275,7 @@ export function useFocusTimer() {
       }
 
       storeStart(taskId);
+      syncToServer();
     },
     [
       play,
@@ -275,18 +284,37 @@ export function useFocusTimer() {
       state.activeTaskId,
       state.mode,
       storeStart,
+      syncToServer,
     ],
   );
 
   const pause = useCallback(() => {
     handleCancelNotification();
     storePause();
-  }, [handleCancelNotification, storePause]);
+    syncToServer();
+  }, [handleCancelNotification, storePause, syncToServer]);
 
   const stop = useCallback(() => {
     handleCancelNotification();
     storeStop();
-  }, [handleCancelNotification, storeStop]);
+    syncToServer();
+  }, [handleCancelNotification, storeStop, syncToServer]);
+
+  const cancel = useCallback(() => {
+    handleCancelNotification();
+    storeCancel();
+    syncToServer();
+  }, [handleCancelNotification, storeCancel, syncToServer]);
+
+  // Initial sync on mount if timer is running (handles PWA reopen with active timer)
+  const hasSyncedRef = useRef(false);
+  useEffect(() => {
+    if (hasSyncedRef.current) return;
+    if (!isGuestMode && state.isRunning) {
+      syncToServer();
+    }
+    hasSyncedRef.current = true;
+  }, [isGuestMode, state.isRunning, syncToServer]);
 
   return {
     state,
@@ -295,6 +323,7 @@ export function useFocusTimer() {
     start,
     pause,
     stop,
+    cancel,
     skip: storeSkip,
     updateSettings,
   };
