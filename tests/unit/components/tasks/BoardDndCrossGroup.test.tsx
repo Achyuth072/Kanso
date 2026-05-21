@@ -211,7 +211,7 @@ const defaultProps = {
   projectsMap: new Map<string, Project>(),
   isDesktop: true,
   triggerHaptic: vi.fn(),
-  setActiveTaskId: vi.fn(),
+  startTimer: vi.fn(),
 };
 
 describe("TaskBoard — cross-group snap-back regression", () => {
@@ -273,8 +273,6 @@ describe("TaskBoard — cross-group snap-back regression", () => {
         setIsFullscreen: vi.fn(),
         isSynced: false,
         setIsSynced: vi.fn(),
-        hasChangelogUpdate: false,
-        setHasChangelogUpdate: vi.fn(),
       }),
     );
   });

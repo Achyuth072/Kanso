@@ -190,8 +190,6 @@ describe("TaskList DnD layout shift protection", () => {
         setIsFullscreen: vi.fn(),
         isSynced: false,
         setIsSynced: vi.fn(),
-        hasChangelogUpdate: false,
-        setHasChangelogUpdate: vi.fn(),
       }),
     );
   });
