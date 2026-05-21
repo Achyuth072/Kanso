@@ -29,6 +29,11 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/components/ui/toggle-group";
+import { Separator } from "@/components/ui/separator";
 import { useTimer } from "@/components/TimerProvider";
 import { useBackNavigation } from "@/lib/hooks/useBackNavigation";
 
@@ -61,6 +66,7 @@ function SettingsForm() {
   const sessions = useWatch({ control, name: "sessionsBeforeLongBreak" });
   const autoStartBreak = useWatch({ control, name: "autoStartBreak" });
   const autoStartFocus = useWatch({ control, name: "autoStartFocus" });
+  const taskSwitchBehavior = useWatch({ control, name: "taskSwitchBehavior" });
 
   return (
     <div className="space-y-6 py-4">
@@ -279,6 +285,52 @@ function SettingsForm() {
           />
         </div>
       </div>
+
+      {/* Session Section — Task Switch Behavior */}
+      <div className="space-y-4 pt-2 border-t">
+        <Separator />
+        <div className="space-y-3">
+          <div className="type-ui font-medium uppercase tracking-wider text-muted-foreground">
+            Session
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-sm font-medium">On task switch</Label>
+              <p className="text-xs text-muted-foreground">
+                What happens when you change tasks during a session
+              </p>
+            </div>
+            <ToggleGroup
+              type="single"
+              value={taskSwitchBehavior === "keepRunning" ? "keep" : taskSwitchBehavior === "pauseOnSwitch" ? "pause" : "reset"}
+              onValueChange={(v) => {
+                if (v) {
+                  const mapped =
+                    v === "keep"
+                      ? "keepRunning"
+                      : v === "pause"
+                        ? "pauseOnSwitch"
+                        : "resetOnSwitch";
+                  setValue("taskSwitchBehavior", mapped, {
+                    shouldValidate: true,
+                  });
+                }
+              }}
+              className="h-8"
+            >
+              <ToggleGroupItem value="keep" className="text-xs h-8 px-2">
+                Keep running
+              </ToggleGroupItem>
+              <ToggleGroupItem value="pause" className="text-xs h-8 px-2">
+                Pause
+              </ToggleGroupItem>
+              <ToggleGroupItem value="reset" className="text-xs h-8 px-2">
+                Reset
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -299,6 +351,7 @@ export function FocusSettingsDialog() {
       sessionsBeforeLongBreak: settings.sessionsBeforeLongBreak,
       autoStartBreak: settings.autoStartBreak,
       autoStartFocus: settings.autoStartFocus,
+      taskSwitchBehavior: settings.taskSwitchBehavior,
     },
   });
 

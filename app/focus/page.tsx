@@ -6,6 +6,10 @@ import { buttonVariants, Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Play, Pause, Square, SkipForward, X } from "lucide-react";
 import { FocusSettingsDialog } from "@/components/FocusSettingsDialog";
+import { FocusTaskPicker } from "@/components/FocusTaskPicker";
+import { FocusSyncIndicator } from "@/components/FocusSyncIndicator";
+import { CancelSessionButton } from "@/components/CancelSessionButton";
+import { FullscreenToggle } from "@/components/FullscreenToggle";
 import type { TimerMode } from "@/lib/types/timer";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -14,6 +18,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Task } from "@/lib/types/task";
 import { useHaptic } from "@/lib/hooks/useHaptic";
 import { usePiP } from "@/components/providers/PiPProvider";
+import { useFullscreen } from "@/lib/hooks/useFullscreen";
 import { Minimize2, Target } from "lucide-react";
 import { useFocusHistoryStore } from "@/lib/store/focusHistoryStore";
 import { useMemo } from "react";
@@ -34,10 +39,11 @@ function formatTime(seconds: number): string {
 
 export default function FocusPage() {
   const router = useRouter();
-  const { state, settings, start, pause, stop, skip } = useTimer();
+  const { state, settings, start, pause, stop, skip, cancel } = useTimer();
   const supabase = createClient();
   const { trigger, isPhone } = useHaptic();
   const { isPiPSupported, isPiPActive, openPiP, closePiP } = usePiP();
+  const { isFullscreen, enterFullscreen, exitFullscreen } = useFullscreen();
   const { sessions } = useFocusHistoryStore();
   const todaySessionsCount = useMemo(() => {
     const today = new Date().toDateString();
@@ -92,7 +98,11 @@ export default function FocusPage() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen flex flex-col items-center justify-center p-6 bg-background relative select-none cursor-default"
+      className={cn(
+        "flex flex-col items-center justify-center p-6 bg-background relative select-none cursor-default",
+        isFullscreen && isPhone && "fixed inset-0 z-50 bg-background",
+        isFullscreen && !isPhone ? "min-h-screen" : "min-h-screen",
+      )}
     >
       {/* Close Button */}
       <motion.button
@@ -107,7 +117,7 @@ export default function FocusPage() {
         <X className="h-6 w-6" strokeWidth={2.25} />
       </motion.button>
 
-      {/* PiP Button - Only show if supported and NOT on phone */}
+      {/* PiP Button - Desktop only, shifted left when FullscreenToggle is present */}
       {isPiPSupported && !isPhone && (
         <motion.button
           onClick={handlePiP}
@@ -115,7 +125,7 @@ export default function FocusPage() {
           whileTap={isPhone ? { scale: 0.95 } : {}}
           className={cn(
             buttonVariants({ variant: "ghost", size: "icon" }),
-            "absolute top-4 right-4 h-14 w-14 rounded-full active:scale-95 transition-seijaku cursor-pointer",
+            "absolute top-4 right-20 h-14 w-14 rounded-full active:scale-95 transition-seijaku cursor-pointer",
           )}
           title={
             isPiPActive ? "Close Picture-in-Picture" : "Open Picture-in-Picture"
@@ -123,6 +133,17 @@ export default function FocusPage() {
         >
           <Minimize2 className="h-6 w-6" strokeWidth={2.25} />
         </motion.button>
+      )}
+
+      {/* Fullscreen Toggle - desktop right-4, mobile replaces PiP position */}
+      {!isPhone ? (
+        <div className="absolute top-4 right-4">
+          <FullscreenToggle />
+        </div>
+      ) : (
+        <div className="absolute top-4 right-4">
+          <FullscreenToggle />
+        </div>
       )}
 
       {/* Main Timer UI - Hidden when in PiP */}
@@ -140,12 +161,13 @@ export default function FocusPage() {
               {MODE_LABELS[state.mode]}
             </div>
 
-            {/* Active Task Name */}
-            {activeTask && (
-              <div className="type-body font-medium text-foreground mt-4 max-w-sm">
-                {activeTask.content}
-              </div>
-            )}
+            {/* Sync Indicator — below mode badge */}
+            <div className="mt-2">
+              <FocusSyncIndicator />
+            </div>
+
+            {/* Task Chip — below sync indicator */}
+            <FocusTaskPicker />
 
             {/* Timer Display */}
             <div className="text-7xl sm:text-8xl md:text-[10rem] font-extralight font-mono tracking-tighter text-foreground tabular-nums mt-6 leading-none">
@@ -225,6 +247,9 @@ export default function FocusPage() {
                 <SkipForward className="h-5 w-5" strokeWidth={2.25} />
               </motion.button>
             </div>
+
+            {/* Cancel Session Button */}
+            <CancelSessionButton />
 
             {/* Settings Dialog */}
             <div className="mt-16">

@@ -11,6 +11,14 @@ import { FocusSettingsDialog } from "@/components/FocusSettingsDialog";
 const mockUpdateSettings = vi.fn();
 vi.mock("@/components/TimerProvider", () => ({
   useTimer: () => ({
+    state: {
+      mode: "focus",
+      isRunning: false,
+      remainingSeconds: 1500,
+      completedSessions: 0,
+      activeTaskId: null,
+      startedAt: null,
+    },
     settings: {
       focusDuration: 25,
       shortBreakDuration: 5,
@@ -18,7 +26,14 @@ vi.mock("@/components/TimerProvider", () => ({
       sessionsBeforeLongBreak: 4,
       autoStartBreak: false,
       autoStartFocus: false,
+      taskSwitchBehavior: "keepRunning",
     },
+    isLoaded: true,
+    start: vi.fn(),
+    pause: vi.fn(),
+    stop: vi.fn(),
+    cancel: vi.fn(),
+    skip: vi.fn(),
     updateSettings: mockUpdateSettings,
   }),
   TimerProvider: ({ children }: { children: React.ReactNode }) => (

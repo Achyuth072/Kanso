@@ -4,10 +4,12 @@ import React, { createContext, useContext, ReactNode } from "react";
 import { useDocumentPiP } from "@/lib/hooks/useDocumentPiP";
 import { createPortal } from "react-dom";
 import { PiPTimer } from "@/components/PiPTimer";
+import { useUiStore } from "@/lib/store/uiStore";
 
 interface PiPContextType {
   isPiPSupported: boolean;
   isPiPActive: boolean;
+  isFullscreen: boolean;
   pipWindow: Window | null;
   openPiP: (width?: number, height?: number) => Promise<Window | null>;
   closePiP: () => void;
@@ -17,9 +19,27 @@ const PiPContext = createContext<PiPContextType | null>(null);
 
 export function PiPProvider({ children }: { children: ReactNode }) {
   const pip = useDocumentPiP();
+  const isFullscreen = useUiStore((state) => state.isFullscreen);
+
+  // D-09 mutual exclusion: block PiP when fullscreen is active
+  const openPiPWithGuard = async (width?: number, height?: number) => {
+    if (useUiStore.getState().isFullscreen) {
+      return null;
+    }
+    return pip.openPiP(width, height);
+  };
 
   return (
-    <PiPContext.Provider value={pip}>
+    <PiPContext.Provider
+      value={{
+        isPiPSupported: pip.isPiPSupported,
+        isPiPActive: pip.isPiPActive,
+        isFullscreen,
+        pipWindow: pip.pipWindow,
+        openPiP: openPiPWithGuard,
+        closePiP: pip.closePiP,
+      }}
+    >
       {children}
       {pip.pipWindow &&
         createPortal(
