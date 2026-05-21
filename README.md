@@ -1,20 +1,20 @@
 # Kanso
 
-Kanso is a **Zen-Modernist** task management and focus tool. It fuses the Japanese philosophy of **Kanso** (simplicity) with **Modernism** to create a quiet, high-density environment for deep work.
+A productivity built for deep work. Minimal interface, high information density no noise, no bloat.
 
 ## Key Workflows
 
 ### 1. Capture & Organize
 
 - **Global Command Menu**: `Ctrl/Cmd + K` for instant search, navigation, and actions.
-- **Micro & Macro Views**: Shift between **Masonry Grid**, **Board**, and **List** views instantly with `1/2/3`.
+- **Micro & Macro Views**: Shift between **Masonry Grid**, **Board**(desktop only), and **List** views instantly with `1/2/3`.
 - **Split View**: Desktop List View automatically opens a master-detail split panel.
 - **Project Structure**: Multi-layered project management with archiving and mobile-native drawers.
 - **Group & Filter**: Group tasks by project, priority, or due date with full drag-and-drop across groups.
 
 ### 2. High-Fidelity Tracking
 
-- **Habit Mastery**: Standardized habit tracking with haptic feedback, longevity tracking, and uhabits (.db) import support.
+- **Habit Mastery**: Standardized habit tracking with haptic feedback, longevity tracking, and Loop Habit Tracker (uhabits)(.db) partial import support.
 - **Activity Heatmap**: Track focus minutes and habit completions via a visual consistency chart.
 - **Focus Timer**: PiP-enabled Pomodoro engine with real-time stats and background session detection.
 - **Recurrence Modes**: Per-task Strict (anchor to due date) or Flexible (anchor to completion date) recurrence.
@@ -22,7 +22,7 @@ Kanso is a **Zen-Modernist** task management and focus tool. It fuses the Japane
 ### 3. Calendar & Events
 
 - **Native Event Creation**: Create calendar events directly from the calendar with an NLP-assisted time parser.
-- **Multi-Provider Sync**: Bi-directional sync with Google Calendar, Microsoft Outlook, and any CalDAV server (Nextcloud, iCloud, Fastmail).
+- **Multi-Provider Sync**: Bi-directional sync with Google Calendar(WIP), Microsoft Outlook(WIP), and any CalDAV server (Nextcloud, iCloud, Fastmail).
 - **ICS Portability**: Universal `.ics` (RFC 5545) import and export for full calendar portability.
 
 ### 4. Data Ownership & Sync
