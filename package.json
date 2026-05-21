@@ -22,8 +22,8 @@
     "dead-code": "npx knip",
     "unused-deps": "npx depcheck",
     "copy-wasm": "node -e \"require('fs').copyFileSync('node_modules/sql.js/dist/sql-wasm.wasm', 'public/sql-wasm.wasm')\"",
-    "preview": "sh -c 'if [ \"$OSTYPE\" = \"msys\" ] || [ \"$OSTYPE\" = \"win32\" ]; then powershell.exe -File .\\.planning\\preview.ps1 \"$@\"; else bash ./.planning/preview.sh \"$@\"; fi' --",
-    "release": "sh -c 'if [ \"$OSTYPE\" = \"msys\" ] || [ \"$OSTYPE\" = \"win32\" ]; then powershell.exe -File .\\.planning\\release.ps1 \"$@\"; else bash ./.planning/release.sh \"$@\"; fi' --",
+    "preview": "bash .planning/preview.sh",
+    "release": "bash .planning/release.sh",
     "prepare": "husky && npm run copy-wasm"
   },
   "lint-staged": {
