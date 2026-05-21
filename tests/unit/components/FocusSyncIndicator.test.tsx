@@ -35,6 +35,12 @@ vi.mock("@/lib/store/timerStore", () => ({
       state: {
         isRunning: mockIsRunning,
         remainingSeconds: mockRemainingSeconds,
+        mode: "focus",
+      },
+      settings: {
+        focusDuration: 25,
+        shortBreakDuration: 5,
+        longBreakDuration: 15,
       },
     };
     return selector(state);
@@ -71,8 +77,8 @@ describe("FocusSyncIndicator", () => {
 
     const icon = screen.getByTestId("link2-icon");
     expect(icon).toBeInTheDocument();
-    expect(icon.className).toContain("text-brand");
-    expect(icon.className).toContain("opacity-70");
+    expect(icon.getAttribute("class")).toContain("text-brand");
+    expect(icon.getAttribute("class")).toContain("opacity-70");
     expect(screen.getByRole("status")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveAttribute(
       "aria-label",
@@ -90,8 +96,8 @@ describe("FocusSyncIndicator", () => {
 
     const icon = screen.getByTestId("link2-icon");
     expect(icon).toBeInTheDocument();
-    expect(icon.className).toContain("text-muted-foreground");
-    expect(icon.className).toContain("opacity-30");
+    expect(icon.getAttribute("class")).toContain("text-muted-foreground");
+    expect(icon.getAttribute("class")).toContain("opacity-30");
     expect(screen.getByRole("status")).toHaveAttribute(
       "aria-label",
       "Offline — session not syncing",
