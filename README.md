@@ -1,6 +1,6 @@
 # Kanso
 
-A task manager and focus tool built for deep work. Minimal interface, high information density — no noise, no bloat.
+A productivity built for deep work. Minimal interface, high information density no noise, no bloat.
 
 ## Key Workflows
 
