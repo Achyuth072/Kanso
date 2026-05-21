@@ -19,9 +19,9 @@ import type { Task } from "@/lib/types/task";
 import { useHaptic } from "@/lib/hooks/useHaptic";
 import { usePiP } from "@/components/providers/PiPProvider";
 import { useFullscreen } from "@/lib/hooks/useFullscreen";
-import { Minimize2, Target, PictureInPicture2 } from "lucide-react";
+import { Minimize2, Target } from "lucide-react";
 import { useFocusHistoryStore } from "@/lib/store/focusHistoryStore";
-import { useMemo, useEffect, useRef } from "react";
+import { useMemo } from "react";
 
 const MODE_LABELS: Record<TimerMode, string> = {
   focus: "Focus",
@@ -39,11 +39,11 @@ function formatTime(seconds: number): string {
 
 export default function FocusPage() {
   const router = useRouter();
-  const { state, settings, start, pause, stop, skip } = useTimer();
+  const { state, settings, start, pause, stop, skip, cancel } = useTimer();
   const supabase = createClient();
   const { trigger, isPhone } = useHaptic();
   const { isPiPSupported, isPiPActive, openPiP, closePiP } = usePiP();
-  const { isFullscreen } = useFullscreen();
+  const { isFullscreen, enterFullscreen, exitFullscreen } = useFullscreen();
   const { sessions } = useFocusHistoryStore();
   const todaySessionsCount = useMemo(() => {
     const today = new Date().toDateString();
@@ -52,18 +52,8 @@ export default function FocusPage() {
     ).length;
   }, [sessions]);
 
-  // Auto-start when navigating from a task with activeTaskId set (e.g., play focus tap)
-  // Runs only once on mount — the ref prevents re-triggering on state changes
-  const hasAutoStarted = useRef(false);
-  useEffect(() => {
-    if (!hasAutoStarted.current && state.activeTaskId && !state.isRunning) {
-      hasAutoStarted.current = true;
-      start();
-    }
-  }, [state.activeTaskId, state.isRunning, start]);
-
   // Fetch active task if one is set
-  useQuery({
+  const { data: activeTask } = useQuery({
     queryKey: ["task", state.activeTaskId],
     queryFn: async () => {
       if (!state.activeTaskId) return null;
@@ -127,26 +117,34 @@ export default function FocusPage() {
         <X className="h-6 w-6" strokeWidth={2.25} />
       </motion.button>
 
-      {/* PiP Button - Desktop only, bottom-left */}
+      {/* PiP Button - Desktop only, shifted left when FullscreenToggle is present */}
       {isPiPSupported && !isPhone && (
         <motion.button
           onClick={handlePiP}
           onTapStart={() => trigger("thud")}
-          whileTap={{ scale: 0.95 }}
+          whileTap={isPhone ? { scale: 0.95 } : {}}
           className={cn(
             buttonVariants({ variant: "ghost", size: "icon" }),
-            "absolute bottom-4 left-4 h-14 w-14 rounded-full active:scale-95 transition-seijaku cursor-pointer",
+            "absolute top-4 right-20 h-14 w-14 rounded-full active:scale-95 transition-seijaku cursor-pointer",
           )}
           title={
             isPiPActive ? "Close Picture-in-Picture" : "Open Picture-in-Picture"
           }
         >
-          <PictureInPicture2 className="h-6 w-6" strokeWidth={2.25} />
+          <Minimize2 className="h-6 w-6" strokeWidth={2.25} />
         </motion.button>
       )}
 
-      {/* Fullscreen Toggle - top-right */}
-      <FullscreenToggle />
+      {/* Fullscreen Toggle - desktop right-4, mobile replaces PiP position */}
+      {!isPhone ? (
+        <div className="absolute top-4 right-4">
+          <FullscreenToggle />
+        </div>
+      ) : (
+        <div className="absolute top-4 right-4">
+          <FullscreenToggle />
+        </div>
+      )}
 
       {/* Main Timer UI - Hidden when in PiP */}
       <AnimatePresence mode="wait">
