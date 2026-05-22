@@ -35,4 +35,4 @@ CREATE POLICY "Users can update own timer state" ON public.user_timer_state
   FOR UPDATE USING (auth.uid() = user_id);
 
 -- Add to realtime publication (required for postgres_changes events)
-ALTER PUBLICATION supabase_realtime ADD TABLE IF NOT EXISTS public.user_timer_state;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.user_timer_state;
