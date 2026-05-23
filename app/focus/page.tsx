@@ -19,7 +19,7 @@ import type { Task } from "@/lib/types/task";
 import { useHaptic } from "@/lib/hooks/useHaptic";
 import { usePiP } from "@/components/providers/PiPProvider";
 import { useFullscreen } from "@/lib/hooks/useFullscreen";
-import { Minimize2, Target } from "lucide-react";
+import { Minimize2, Target, PictureInPicture2 } from "lucide-react";
 import { useFocusHistoryStore } from "@/lib/store/focusHistoryStore";
 import { useMemo, useEffect } from "react";
 
@@ -134,13 +134,13 @@ export default function FocusPage() {
           whileTap={isPhone ? { scale: 0.95 } : {}}
           className={cn(
             buttonVariants({ variant: "ghost", size: "icon" }),
-            "absolute top-4 right-20 h-14 w-14 rounded-full active:scale-95 transition-seijaku cursor-pointer",
+            "absolute top-4 right-24 h-14 w-14 rounded-full active:scale-95 transition-seijaku cursor-pointer",
           )}
           title={
             isPiPActive ? "Close Picture-in-Picture" : "Open Picture-in-Picture"
           }
         >
-          <Minimize2 className="h-6 w-6" strokeWidth={2.25} />
+          <PictureInPicture2 className="h-6 w-6" strokeWidth={2.25} />
         </motion.button>
       )}
 
