@@ -89,10 +89,14 @@ export const useTimerStore = create<TimerStore>()(
 
       cancel: () => {
         const { settings, state } = get();
+        const rolledBack =
+          state.mode === "focus"
+            ? state.completedSessions
+            : Math.max(0, state.completedSessions - 1);
         set({
           state: {
             ...getInitialState(settings),
-            completedSessions: state.completedSessions, // PRESERVE
+            completedSessions: rolledBack,
           },
         });
       },
