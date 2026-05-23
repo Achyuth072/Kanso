@@ -12,7 +12,7 @@ interface TaskMasonryGridProps {
   onSelect?: (task: Task) => void;
   isDesktop: boolean;
   triggerHaptic: (signature?: "tick" | "toggle" | "thud" | "success") => void;
-  startTimer: (taskId: string) => void;
+  setActiveTaskId: (taskId: string) => void;
 }
 
 export function TaskMasonryGrid({
@@ -21,7 +21,7 @@ export function TaskMasonryGrid({
   onSelect,
   isDesktop,
   triggerHaptic,
-  startTimer,
+  setActiveTaskId,
 }: TaskMasonryGridProps) {
   const { active, evening, groups, completed } = processedTasks;
 
@@ -77,7 +77,7 @@ export function TaskMasonryGrid({
               onSelect={onSelect}
               isDesktop={isDesktop}
               triggerHaptic={triggerHaptic}
-              startTimer={startTimer}
+              setActiveTaskId={setActiveTaskId}
               viewMode="grid"
             />
           );

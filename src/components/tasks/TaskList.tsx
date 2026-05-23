@@ -45,7 +45,7 @@ import { TaskListView } from "./TaskListView";
 import { TaskMasonryGrid } from "./TaskMasonryGrid";
 import { TaskBoard } from "./TaskBoard";
 import { TaskGhost } from "./TaskGhost";
-import { useTimer } from "@/components/TimerProvider";
+import { useTimerStore } from "@/lib/store/timerStore";
 
 interface TaskListProps {
   sortBy?: SortOption;
@@ -82,7 +82,7 @@ function TaskListBase({
   const isDesktop = useUiStore((state) => state.isDesktop);
   const { openAddTask } = useTaskActions();
   const { trigger: triggerHaptic } = useHaptic();
-  const { start: startTimer } = useTimer();
+  const setActiveTaskId = useTimerStore((state) => state.setActiveTaskId);
 
   // --- Optimization: Stabilize Sensors ---
   const mouseSensor = useSensor(MouseSensor, {
@@ -657,7 +657,7 @@ function TaskListBase({
               onSelect={handleTaskClick}
               isDesktop={isDesktop}
               triggerHaptic={triggerHaptic}
-              startTimer={startTimer}
+              setActiveTaskId={setActiveTaskId}
             />
           ) : viewMode === "board" && isDesktop ? (
             <TaskBoard
@@ -666,7 +666,7 @@ function TaskListBase({
               onSelect={handleTaskClick}
               isDesktop={isDesktop}
               triggerHaptic={triggerHaptic}
-              startTimer={startTimer}
+              setActiveTaskId={setActiveTaskId}
             />
           ) : (
             <TaskListView
@@ -680,7 +680,7 @@ function TaskListBase({
               projectsMap={projectsMap}
               isDesktop={isDesktop}
               triggerHaptic={triggerHaptic}
-              startTimer={startTimer}
+              setActiveTaskId={setActiveTaskId}
             />
           )}
         </div>

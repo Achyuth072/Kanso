@@ -16,7 +16,7 @@ interface SortableListTaskCardProps {
   project?: { color: string; name: string };
   isDesktop?: boolean;
   triggerHaptic?: (signature?: "tick" | "toggle" | "thud" | "success") => void;
-  startTimer?: (taskId: string) => void;
+  setActiveTaskId?: (taskId: string) => void;
 }
 
 /**
@@ -38,7 +38,7 @@ const TaskItemContent = memo(
     project,
     isDesktop,
     triggerHaptic,
-    startTimer,
+    setActiveTaskId,
   }: SortableListTaskCardProps & {
     attributes: import("@dnd-kit/core").DraggableAttributes;
     listeners: import("@dnd-kit/core").DraggableSyntheticListeners | undefined;
@@ -59,7 +59,7 @@ const TaskItemContent = memo(
         project={project}
         isDesktop={isDesktop}
         triggerHaptic={triggerHaptic}
-        startTimer={startTimer}
+        setActiveTaskId={setActiveTaskId}
       />
     );
   },
@@ -91,7 +91,7 @@ export default function SortableListTaskCard({
   project,
   isDesktop,
   triggerHaptic,
-  startTimer,
+  setActiveTaskId,
 }: SortableListTaskCardProps) {
   const {
     attributes,
@@ -164,7 +164,7 @@ export default function SortableListTaskCard({
         project={project}
         isDesktop={isDesktop}
         triggerHaptic={triggerHaptic}
-        startTimer={startTimer}
+        setActiveTaskId={setActiveTaskId}
       />
     </div>
   );

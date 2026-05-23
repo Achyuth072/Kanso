@@ -50,7 +50,7 @@ interface TaskBoardProps {
   onSelect?: (task: Task) => void;
   isDesktop: boolean;
   triggerHaptic: (signature?: "tick" | "toggle" | "thud" | "success") => void;
-  startTimer: (taskId: string) => void;
+  setActiveTaskId: (taskId: string) => void;
 }
 
 export function TaskBoard({
@@ -59,7 +59,7 @@ export function TaskBoard({
   onSelect,
   isDesktop,
   triggerHaptic,
-  startTimer,
+  setActiveTaskId,
 }: TaskBoardProps) {
   const isJsLoaded = useJsLoaded();
   const { groups, active, evening } = processedTasks;
@@ -392,7 +392,7 @@ export function TaskBoard({
               projectsMap={projectsMap}
               isDesktop={isDesktop}
               onSelect={onSelect}
-              startTimer={startTimer}
+              setActiveTaskId={setActiveTaskId}
               triggerHaptic={triggerHaptic}
               isDndActive={!!activeId}
             />
@@ -448,7 +448,7 @@ const KanbanColumn = memo(function KanbanColumn({
   projectsMap,
   isDesktop,
   onSelect,
-  startTimer,
+  setActiveTaskId,
   triggerHaptic,
   isDndActive,
 }: {
@@ -456,7 +456,7 @@ const KanbanColumn = memo(function KanbanColumn({
   projectsMap: Map<string, Project>;
   isDesktop: boolean;
   onSelect?: (task: Task) => void;
-  startTimer: (taskId: string) => void;
+  setActiveTaskId: (taskId: string) => void;
   triggerHaptic: (signature?: "tick" | "toggle" | "thud" | "success") => void;
   isDndActive: boolean;
 }) {
@@ -488,7 +488,7 @@ const KanbanColumn = memo(function KanbanColumn({
               project={projectsMap.get(task.project_id || "inbox")}
               isDesktop={isDesktop}
               onSelect={onSelect}
-              startTimer={startTimer}
+              setActiveTaskId={setActiveTaskId}
               triggerHaptic={triggerHaptic}
               _isDndActive={isDndActive}
             />
@@ -511,7 +511,7 @@ const TaskCardWrapper = memo(function TaskCardWrapper({
   project,
   isDesktop,
   onSelect,
-  startTimer,
+  setActiveTaskId,
   triggerHaptic,
   _isDndActive,
 }: {
@@ -519,7 +519,7 @@ const TaskCardWrapper = memo(function TaskCardWrapper({
   project: Project | undefined;
   isDesktop: boolean;
   onSelect?: (task: Task) => void;
-  startTimer: (taskId: string) => void;
+  setActiveTaskId: (taskId: string) => void;
   triggerHaptic: (signature?: "tick" | "toggle" | "thud" | "success") => void;
   _isDndActive: boolean;
 }) {
@@ -532,7 +532,7 @@ const TaskCardWrapper = memo(function TaskCardWrapper({
       isDesktop={isDesktop}
       onSelect={onSelect}
       triggerHaptic={triggerHaptic}
-      startTimer={startTimer}
+      setActiveTaskId={setActiveTaskId}
     />
   );
 });

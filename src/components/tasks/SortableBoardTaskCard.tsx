@@ -12,7 +12,7 @@ interface SortableBoardTaskCardProps {
   isDesktop: boolean;
   onSelect?: (task: Task) => void;
   triggerHaptic?: (signature?: "tick" | "toggle" | "thud" | "success") => void;
-  startTimer?: (taskId: string) => void;
+  setActiveTaskId?: (taskId: string) => void;
 }
 
 export const SortableBoardTaskCard = memo(function SortableBoardTaskCard({
@@ -21,7 +21,7 @@ export const SortableBoardTaskCard = memo(function SortableBoardTaskCard({
   isDesktop,
   onSelect,
   triggerHaptic,
-  startTimer,
+  setActiveTaskId,
 }: SortableBoardTaskCardProps) {
   const {
     attributes,
@@ -69,7 +69,7 @@ export const SortableBoardTaskCard = memo(function SortableBoardTaskCard({
           isDesktop={isDesktop}
           onSelect={onSelect}
           triggerHaptic={triggerHaptic}
-          startTimer={startTimer}
+          setActiveTaskId={setActiveTaskId}
           viewMode="board"
           dragListeners={listeners}
           dragAttributes={attributes}
