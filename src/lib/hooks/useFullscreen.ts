@@ -17,7 +17,6 @@ import { useHaptic } from "@/lib/hooks/useHaptic";
 export function useFullscreen() {
   const setIsFullscreen = useUiStore((state) => state.setIsFullscreen);
   const isFullscreen = useUiStore((state) => state.isFullscreen);
-  const setIsPipActive = useUiStore((state) => state.setIsPipActive);
   const { isPhone } = useHaptic();
 
   // Sync fullscreenchange events to uiStore
@@ -36,8 +35,10 @@ export function useFullscreen() {
   }, [setIsFullscreen]);
 
   const enterFullscreen = useCallback(async () => {
-    // Mutual exclusion: dismiss PiP first per D-09
-    setIsPipActive(false);
+    // PiP dismissal is handled by PiPProvider's reactive useEffect —
+    // no direct setIsPipActive call needed here. The provider detects
+    // isFullscreen && isPiPActive and calls closePiP(), which correctly
+    // handles both Chrome Document PiP and Firefox popup fallback.
 
     if (!isPhone && document.fullscreenEnabled) {
       try {
@@ -50,7 +51,7 @@ export function useFullscreen() {
 
     // Set flag for both desktop and mobile (mobile uses this for CSS layout)
     setIsFullscreen(true);
-  }, [isPhone, setIsFullscreen, setIsPipActive]);
+  }, [isPhone, setIsFullscreen]);
 
   const exitFullscreen = useCallback(() => {
     if (document.fullscreenElement) {
