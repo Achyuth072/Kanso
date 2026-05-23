@@ -29,11 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@/components/ui/toggle-group";
-import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTimer } from "@/components/TimerProvider";
 import { useBackNavigation } from "@/lib/hooks/useBackNavigation";
 
@@ -288,47 +284,56 @@ function SettingsForm() {
 
       {/* Session Section — Task Switch Behavior */}
       <div className="space-y-4 pt-2 border-t">
-        <Separator />
-        <div className="space-y-3">
-          <div className="type-ui font-medium uppercase tracking-wider text-muted-foreground">
-            Session
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label className="text-sm font-medium">On task switch</Label>
+            <p className="text-xs text-muted-foreground">
+              What happens when you change tasks during a session
+            </p>
           </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-sm font-medium">On task switch</Label>
-              <p className="text-xs text-muted-foreground">
-                What happens when you change tasks during a session
-              </p>
-            </div>
-            <ToggleGroup
-              type="single"
-              value={taskSwitchBehavior === "keepRunning" ? "keep" : taskSwitchBehavior === "pauseOnSwitch" ? "pause" : "reset"}
-              onValueChange={(v) => {
-                if (v) {
-                  const mapped =
-                    v === "keep"
-                      ? "keepRunning"
-                      : v === "pause"
-                        ? "pauseOnSwitch"
-                        : "resetOnSwitch";
-                  setValue("taskSwitchBehavior", mapped, {
-                    shouldValidate: true,
-                  });
-                }
-              }}
-              className="h-8"
-            >
-              <ToggleGroupItem value="keep" className="text-xs h-8 px-2">
-                Keep running
-              </ToggleGroupItem>
-              <ToggleGroupItem value="pause" className="text-xs h-8 px-2">
+          <Tabs
+            value={taskSwitchBehavior === "keepRunning" ? "keep" : taskSwitchBehavior === "pauseOnSwitch" ? "pause" : "reset"}
+            onValueChange={(v) => {
+              if (v) {
+                const mapped = v === "keep" ? "keepRunning" : v === "pause" ? "pauseOnSwitch" : "resetOnSwitch";
+                setValue("taskSwitchBehavior", mapped, { shouldValidate: true });
+              }
+            }}
+            className="w-auto"
+          >
+            <TabsList className="grid grid-cols-3 bg-secondary/10 p-1 rounded-lg h-9 border border-border/40 shadow-none">
+              <TabsTrigger
+                value="keep"
+                className={cn(
+                  "rounded-md text-[12px] font-medium tracking-tight h-7 px-2",
+                  "data-[state=active]:bg-brand data-[state=active]:text-brand-foreground data-[state=active]:shadow-none transition-seijaku-fast",
+                  "border border-transparent data-[state=active]:border-brand/20 text-muted-foreground hover:text-foreground hover:bg-secondary/40",
+                )}
+              >
+                Keep
+              </TabsTrigger>
+              <TabsTrigger
+                value="pause"
+                className={cn(
+                  "rounded-md text-[12px] font-medium tracking-tight h-7 px-2",
+                  "data-[state=active]:bg-brand data-[state=active]:text-brand-foreground data-[state=active]:shadow-none transition-seijaku-fast",
+                  "border border-transparent data-[state=active]:border-brand/20 text-muted-foreground hover:text-foreground hover:bg-secondary/40",
+                )}
+              >
                 Pause
-              </ToggleGroupItem>
-              <ToggleGroupItem value="reset" className="text-xs h-8 px-2">
+              </TabsTrigger>
+              <TabsTrigger
+                value="reset"
+                className={cn(
+                  "rounded-md text-[12px] font-medium tracking-tight h-7 px-2",
+                  "data-[state=active]:bg-brand data-[state=active]:text-brand-foreground data-[state=active]:shadow-none transition-seijaku-fast",
+                  "border border-transparent data-[state=active]:border-brand/20 text-muted-foreground hover:text-foreground hover:bg-secondary/40",
+                )}
+              >
                 Reset
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </div>
     </div>
