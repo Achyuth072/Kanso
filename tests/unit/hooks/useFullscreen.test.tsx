@@ -143,24 +143,19 @@ describe("useFullscreen", () => {
     expect(mockSetIsFullscreen).toHaveBeenCalledWith(true);
   });
 
-  // --- Test 3: Entering fullscreen dismisses PiP first (mutual exclusion) ---
+  // --- Test 3: Entering fullscreen no longer directly calls setIsPipActive ---
 
-  it("should dismiss PiP before entering fullscreen (mutual exclusion D-09)", async () => {
+  it("should NOT call setIsPipActive directly (PiPProvider reactive effect handles dismissal)", async () => {
     const { result } = renderHook(() => useFullscreen());
 
     await act(async () => {
       await result.current.enterFullscreen();
     });
 
-    // setIsPipActive(false) must be called
-    expect(mockSetIsPipActive).toHaveBeenCalledWith(false);
-    // setIsFullscreen(true) must also be called
+    // setIsPipActive(false) should NOT be called — PiPProvider handles it reactively
+    expect(mockSetIsPipActive).not.toHaveBeenCalled();
+    // setIsFullscreen(true) must be called
     expect(mockSetIsFullscreen).toHaveBeenCalledWith(true);
-
-    // Verify order: setIsPipActive called before setIsFullscreen
-    const pipOrder = mockSetIsPipActive.mock.invocationCallOrder[0];
-    const fsOrder = mockSetIsFullscreen.mock.invocationCallOrder[0];
-    expect(pipOrder).toBeLessThan(fsOrder!);
   });
 
   // --- Test 4: exitFullscreen calls document.exitFullscreen() on desktop ---
