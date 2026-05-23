@@ -211,7 +211,7 @@ const defaultProps = {
   projectsMap: new Map<string, Project>(),
   isDesktop: true,
   triggerHaptic: vi.fn(),
-  startTimer: vi.fn(),
+  setActiveTaskId: vi.fn(),
 };
 
 describe("TaskBoard — cross-group snap-back regression", () => {

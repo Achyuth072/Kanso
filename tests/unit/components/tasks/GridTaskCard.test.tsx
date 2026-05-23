@@ -81,7 +81,7 @@ describe("GridTaskCard Drag Resistance & Thresholds", () => {
     task: mockTask,
     isDesktop: false,
     triggerHaptic: vi.fn(),
-    startTimer: vi.fn(),
+    setActiveTaskId: vi.fn(),
   };
 
   beforeEach(() => {
