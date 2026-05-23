@@ -61,9 +61,16 @@ export function FocusTaskPicker() {
   const cancel = useTimerStore((s) => s.cancel);
   const setActiveTaskId = useTimerStore((s) => s.setActiveTaskId);
 
-  // Fetch active task details
+  // Guest-mode fallback for active task detail (sync lookup, no network)
+  const guestActiveTask: Task | null = useMemo(() => {
+    if (!isGuestMode || !activeTaskId) return null;
+    const all = mockStore.getTasks();
+    return all.find((t) => t.id === activeTaskId) ?? null;
+  }, [isGuestMode, activeTaskId]);
+
+  // Fetch active task details (disabled for guest mode — guestActiveTask handles it)
   const { data: activeTask, isLoading: activeTaskLoading } = useQuery({
-    queryKey: ["task", activeTaskId],
+    queryKey: ["task", activeTaskId, isGuestMode],
     queryFn: async () => {
       if (!activeTaskId) return null;
       const { data } = await supabase
@@ -73,8 +80,12 @@ export function FocusTaskPicker() {
         .single();
       return data as Task | null;
     },
-    enabled: !!activeTaskId,
+    enabled: !!activeTaskId && !isGuestMode,
   });
+
+  // Resolve active task: guest uses local memo, authed uses Supabase query
+  const resolvedActiveTask = isGuestMode ? guestActiveTask : activeTask;
+  const resolvedActiveTaskLoading = isGuestMode ? false : activeTaskLoading;
 
   // Fetch today's tasks + overdue for the picker (only when open)
   const today = useMemo(() => getTodayString(), []);
@@ -161,8 +172,8 @@ export function FocusTaskPicker() {
   useBackNavigation(open && !isDesktop, () => setOpen(false));
 
   // Chip ARIA label
-  const chipLabel = activeTask
-    ? `Change focus task: ${activeTask?.content || ""}`
+  const chipLabel = resolvedActiveTask
+    ? `Change focus task: ${resolvedActiveTask?.content || ""}`
     : "Select focus task";
 
   // Task list rendering
@@ -264,7 +275,7 @@ export function FocusTaskPicker() {
           whileTap={{ scale: 0.97 }}
           className={cn(
             "flex items-center gap-2 rounded-full px-3 py-2 min-h-[32px] max-w-[240px] truncate transition-colors duration-150 cursor-pointer",
-            activeTask
+            resolvedActiveTask
               ? "bg-secondary/40 border border-border/60 hover:bg-secondary/60 hover:border-brand/40"
               : "border-dashed border-border/60 bg-transparent hover:bg-secondary/40 hover:border-brand/40",
           )}
@@ -275,13 +286,13 @@ export function FocusTaskPicker() {
             className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
             strokeWidth={2.25}
           />
-          {activeTaskLoading ? (
+          {resolvedActiveTaskLoading ? (
             <span className="text-[13px] text-muted-foreground/60">
               Loading...
             </span>
-          ) : activeTask ? (
+          ) : resolvedActiveTask ? (
             <span className="text-body text-foreground truncate text-[15px]">
-              {activeTask.content}
+              {resolvedActiveTask.content}
             </span>
           ) : (
             <span className="text-[13px] text-muted-foreground/60">
