@@ -17,10 +17,18 @@ import { cn } from "@/lib/utils";
  * Per UI-SPEC CANCEL-01: Not destructive color. Hover underline only.
  *
  * Visibility: Only shown when a session is active (running or paused mid-session).
+ *
+ * DESIGN TOKENS — INK & MATTE ALIGNMENT:
+ * - Typography (text-[11px] font-medium uppercase tracking-widest) mirrors the
+ *   MODE_LABELS badge in app/focus/page.tsx so both read as siblings in the
+ *   same typographic system.
+ * - Color (text-muted-foreground/70 → text-muted-foreground on hover) uses
+ *   opacity to reveal the link on hover rather than jumping to text-foreground,
+ *   keeping the feel ink & matte (subdued, no accent color, no destructive red).
  */
 
 const ACTIVE_CLASSES =
-  "text-[13px] text-muted-foreground hover:text-foreground hover:underline transition-colors duration-150 cursor-pointer";
+  "text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 hover:text-muted-foreground hover:underline underline-offset-4 transition-colors duration-150 cursor-pointer";
 
 const INACTIVE_CLASSES =
   "text-[13px] text-muted-foreground opacity-0 pointer-events-none";
@@ -57,7 +65,7 @@ export function CancelSessionButton() {
   if (!isSessionActive) return null;
 
   return (
-    <div className="py-3 mt-8 flex justify-center">
+    <div className="py-4 flex justify-center">
       <button
         onClick={handleClick}
         className={cn(
