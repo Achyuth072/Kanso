@@ -21,7 +21,7 @@ import { usePiP } from "@/components/providers/PiPProvider";
 import { useFullscreen } from "@/lib/hooks/useFullscreen";
 import { Minimize2, Target } from "lucide-react";
 import { useFocusHistoryStore } from "@/lib/store/focusHistoryStore";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 
 const MODE_LABELS: Record<TimerMode, string> = {
   focus: "Focus",
@@ -51,6 +51,15 @@ export default function FocusPage() {
       (s) => new Date(s.completedAt).toDateString() === today,
     ).length;
   }, [sessions]);
+
+  // Auto-start when navigating from a task with activeTaskId set (e.g., play focus tap)
+  // Intentionally runs only on mount — the empty dep array ensures this.
+  useEffect(() => {
+    if (state.activeTaskId && !state.isRunning) {
+      start();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Fetch active task if one is set
   const { data: activeTask } = useQuery({
