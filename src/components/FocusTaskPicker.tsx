@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { Target, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/components/AuthProvider";
+import { mockStore } from "@/lib/mock/mock-store";
 
 /**
  * Focus Task Picker
@@ -79,9 +80,22 @@ export function FocusTaskPicker() {
   const today = useMemo(() => getTodayString(), []);
 
   const { data: pickerTasks, isLoading: pickerLoading } = useQuery({
-    queryKey: ["focus-tasks"],
+    queryKey: ["focus-tasks", today, isGuestMode],
     queryFn: async () => {
-      if (isGuestMode) return [];
+      if (isGuestMode) {
+        const all = mockStore.getTasks();
+        const todayTasks = all.filter((t) => t.do_date === today);
+        const overdueTasks = all.filter(
+          (t) => t.do_date && t.do_date < today,
+        );
+        const combined = [...todayTasks, ...overdueTasks];
+        const seen = new Set<string>();
+        return combined.filter((t) => {
+          if (seen.has(t.id)) return false;
+          seen.add(t.id);
+          return true;
+        });
+      }
       const todayStr = today;
       const { data } = await supabase
         .from("tasks")
@@ -103,7 +117,7 @@ export function FocusTaskPicker() {
         return true;
       }) as Task[];
     },
-    enabled: open && !isGuestMode,
+    enabled: open,
   });
 
   // Chip tap handler — opens the picker

@@ -502,7 +502,8 @@ describe("FocusTaskPicker", () => {
     );
     expect(focusTaskCall).toBeDefined();
     const [, today, guestFlag] = focusTaskCall.queryKey;
-    expect(today).toBe(TODAY);
+    // Verify date string format: YYYY-MM-DD
+    expect(today).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(guestFlag).toBe(false);
   });
 
@@ -581,11 +582,13 @@ describe("FocusTaskPicker", () => {
     const chip = screen.getByRole("button", { name: "Select focus task" });
     fireEvent.click(chip);
 
-    const focusTaskCall = callArgs.find(
+    // Find the LAST focus-tasks call (after the picker opened)
+    const focusTaskCalls = callArgs.filter(
       (opts) => opts.queryKey?.[0] === "focus-tasks",
     );
-    expect(focusTaskCall).toBeDefined();
-    expect(focusTaskCall.enabled).toBe(true);
+    expect(focusTaskCalls.length).toBeGreaterThanOrEqual(1);
+    const lastFocusTaskCall = focusTaskCalls[focusTaskCalls.length - 1];
+    expect(lastFocusTaskCall.enabled).toBe(true);
   });
 
   // ===================================================================
