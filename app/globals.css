@@ -555,41 +555,22 @@ select {
   }
 }
 
-/* Sonner Toast Positioning Overrides
+/* Sonner Toast Centering
  *
- * DESKTOP (≥601px): Sonner v2 centers the toaster container via left:50%+translateX(-50%).
- * Individual unstyled toasts need an explicit width and the same centering so they don't
- * anchor to left:0 of the container. The override below restores that. (Fixes #MOBILE-92)
+ * Sonner's centered toaster (<ol data-x-position="center">) uses position:fixed
+ * with left:50% + translateX(-50%). Individual toast <li> elements are absolutely
+ * positioned inside the <ol> and default to left:0 of the container, which would
+ * left-anchor a content-sized toast. Re-apply left:50% + translateX(-50%) on the
+ * <li> so it centers within the toaster regardless of its (fit-content) width.
  *
- * MOBILE (≤600px): Sonner v2 sets the toaster to position:fixed; left:16px; width:100vw.
- * Individual toasts are positioned with left:0; right:0; width:calc(100% - 32px) = 328px.
- * This produces 16px margins on both sides — BUT only when no explicit width is set.
- *
- * The toast classNames in notification.tsx include `w-fit` (width:fit-content), which
- * defeats Sonner's width:calc(100% - 32px). With width:fit-content + position:absolute,
- * `left:0` wins in LTR and the toast snaps left — 16px from viewport, 0px right margin.
- *
- * Fix: Re-assert Sonner's intended width calculation with !important to defeat w-fit.
- * Keep left:0 (Sonner's own approach). The width override is the only change needed.
- * No margin:auto is used — the toaster is already offset 16px, so centering within
- * it would add a second 16px shift (left=32px, right=0px — worse than the original bug).
+ * Width is intentionally NOT set here — the inline `width: fit-content` and
+ * `max-width: min(24rem, calc(100vw - 2rem))` from toastOptions.style in
+ * notification.tsx drive the size. Mobile gutters come from Sonner's own
+ * mobileOffset config (already set in notification.tsx).
  */
 /* eslint-disable tailwindcss/no-important */
-@media (min-width: 601px) {
-  [data-sonner-toaster][data-x-position="center"] [data-sonner-toast] {
-    transform: translateX(-50%) !important;
-    left: 50% !important;
-    width: calc(100vw - 2rem) !important;
-    max-width: 400px !important;
-  }
-}
-
-@media (max-width: 600px) {
-  /* Defeat `w-fit` from notification.tsx so Sonner's left:0 + width strategy works
-     correctly. The computed width equals (toaster width) - 2*(mobileOffset.left)
-     = 100vw - 32px = 328px at 360px viewport → 16px visual margin on each side. */
-  [data-sonner-toaster][data-x-position="center"] [data-sonner-toast] {
-    width: calc(100% - var(--mobile-offset-left, 16px) * 2) !important;
-  }
+[data-sonner-toaster][data-x-position="center"] [data-sonner-toast] {
+  left: 50% !important;
+  transform: translateX(-50%) !important;
 }
 /* eslint-enable tailwindcss/no-important */
