@@ -21,6 +21,10 @@ export function Toaster() {
       swipeDirections={["bottom"]}
       toastOptions={{
         unstyled: true,
+        style: {
+          width: "fit-content",
+          maxWidth: "min(24rem, calc(100vw - 2rem))",
+        },
         classNames: {
           toast: cn(
             inter.variable,
