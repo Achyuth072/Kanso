@@ -44,6 +44,11 @@ export function usePushNotifications() {
 
   // Helper to wait for service worker with timeout
   const getServiceWorkerRegistration = useCallback(async () => {
+    // Fast-fail if no SW is registered at all (e.g. dev mode without ENABLE_PWA=true)
+    const existing = await navigator.serviceWorker.getRegistration();
+    if (!existing) {
+      throw new Error("No service worker registered");
+    }
     const swPromise = navigator.serviceWorker.ready;
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(
