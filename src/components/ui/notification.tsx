@@ -28,7 +28,7 @@ export function Toaster() {
             "bg-card/98 backdrop-blur-md border border-border/80 text-foreground",
             "rounded-md shadow-sm inline-flex items-center gap-3",
             "py-2.5 px-4 sm:py-3 sm:px-5",
-            "w-fit max-w-sm min-w-[280px]",
+            "w-fit max-w-sm",
             "mb-[calc(76px+env(safe-area-inset-bottom))] md:mb-5",
             "transition-all duration-300 ease-seijaku",
             "[&_[data-icon]]:text-foreground/60",

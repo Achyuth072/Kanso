@@ -145,9 +145,7 @@ export default function FocusPage() {
       )}
 
       {/* Fullscreen Toggle - top-right */}
-      <div className="absolute top-4 right-4">
-        <FullscreenToggle />
-      </div>
+      <FullscreenToggle />
 
       {/* Main Timer UI - Hidden when in PiP */}
       <AnimatePresence mode="wait">
