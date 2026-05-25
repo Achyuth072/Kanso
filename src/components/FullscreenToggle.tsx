@@ -43,9 +43,6 @@ export function FullscreenToggle() {
       className={cn(
         buttonVariants({ variant: "ghost", size: "icon" }),
         "absolute top-4 right-4 h-14 w-14 rounded-full active:scale-95 transition-seijaku cursor-pointer",
-        isFullscreen
-          ? "text-brand border border-brand/40"
-          : "border border-border/40",
       )}
       aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
     >

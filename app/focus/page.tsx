@@ -126,15 +126,15 @@ export default function FocusPage() {
         <X className="h-6 w-6" strokeWidth={2.25} />
       </motion.button>
 
-      {/* PiP Button - Desktop only, shifted left when FullscreenToggle is present */}
+      {/* PiP Button - Desktop only, bottom-left */}
       {isPiPSupported && !isPhone && (
         <motion.button
           onClick={handlePiP}
           onTapStart={() => trigger("thud")}
-          whileTap={isPhone ? { scale: 0.95 } : {}}
+          whileTap={{ scale: 0.95 }}
           className={cn(
             buttonVariants({ variant: "ghost", size: "icon" }),
-            "absolute top-4 right-24 h-14 w-14 rounded-full active:scale-95 transition-seijaku cursor-pointer",
+            "absolute bottom-4 left-4 h-14 w-14 rounded-full active:scale-95 transition-seijaku cursor-pointer",
           )}
           title={
             isPiPActive ? "Close Picture-in-Picture" : "Open Picture-in-Picture"
@@ -144,16 +144,10 @@ export default function FocusPage() {
         </motion.button>
       )}
 
-      {/* Fullscreen Toggle - desktop right-4, mobile replaces PiP position */}
-      {!isPhone ? (
-        <div className="absolute top-4 right-4">
-          <FullscreenToggle />
-        </div>
-      ) : (
-        <div className="absolute top-4 right-4">
-          <FullscreenToggle />
-        </div>
-      )}
+      {/* Fullscreen Toggle - top-right */}
+      <div className="absolute top-4 right-4">
+        <FullscreenToggle />
+      </div>
 
       {/* Main Timer UI - Hidden when in PiP */}
       <AnimatePresence mode="wait">
