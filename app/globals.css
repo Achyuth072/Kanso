@@ -574,3 +574,20 @@ select {
   transform: translateX(-50%) !important;
 }
 /* eslint-enable tailwindcss/no-important */
+
+/*
+ * Mobile centering override (260525-v0q):
+ * Sonner's mobileOffset shifts the <ol> origin (left:16px on a 360px viewport).
+ * The absolute-positioned <li> with translateX(-50%) then centers within the
+ * offset toaster, NOT the viewport — measured delta=16px at 360px wide.
+ * Use position:fixed to anchor centering to the viewport on mobile.
+ */
+/* eslint-disable tailwindcss/no-important */
+@media (max-width: 600px) {
+  [data-sonner-toaster][data-x-position="center"] [data-sonner-toast] {
+    position: fixed !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+}
+/* eslint-enable tailwindcss/no-important */

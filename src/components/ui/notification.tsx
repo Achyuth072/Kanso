@@ -22,7 +22,8 @@ export function Toaster() {
       toastOptions={{
         unstyled: true,
         style: {
-          width: "fit-content",
+          // max-content (not fit-content): fit-content shrinks to min-content (longest word) inside Sonner's absolute-positioned <li>, causing mid-word wrap on short messages. max-content sizes to the natural one-line width; existing maxWidth caps long messages.
+          width: "max-content",
           maxWidth: "min(24rem, calc(100vw - 2rem))",
         },
         classNames: {
