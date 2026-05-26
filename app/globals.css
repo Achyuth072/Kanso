@@ -576,18 +576,35 @@ select {
 /* eslint-enable tailwindcss/no-important */
 
 /*
- * Mobile centering override (260525-v0q):
- * Sonner's mobileOffset shifts the <ol> origin (left:16px on a 360px viewport).
- * The absolute-positioned <li> with translateX(-50%) then centers within the
- * offset toaster, NOT the viewport — measured delta=16px at 360px wide.
- * Use position:fixed to anchor centering to the viewport on mobile.
+ * Mobile centering override (260526-toast-mobile-centering):
+ *
+ * Sonner's ≤600px built-in rule stretches the centered <ol> from left:16 to
+ * right:16 with width:100vw, overflowing 16px past the right edge of the
+ * viewport. That shifts the LI's `left:50%` centering reference 16px right,
+ * producing the off-center toast (measured delta=16px at 360px viewport).
+ *
+ * Earlier attempt used `position:fixed` on the <li> to escape the offset OL.
+ * That approach (a) Tailwind v4's CSS pipeline silently dropped because the
+ * @media block was at top-level (not inside @layer), and (b) is fragile to
+ * any ancestor introducing transform/filter/will-change (which framer-motion
+ * does transiently during page transitions), since position:fixed re-anchors
+ * to the nearest such ancestor instead of the viewport.
+ *
+ * Better fix: re-anchor the <ol> itself to viewport center on mobile. Sonner
+ * already gives the OL `position:fixed`, so this is safe; the existing LI
+ * rule above (left:50% + translateX(-50%)) then centers the toast within the
+ * centered OL. The @media block MUST live inside an @layer so Tailwind v4
+ * keeps it in the bundle.
  */
-/* eslint-disable tailwindcss/no-important */
-@media (max-width: 600px) {
-  [data-sonner-toaster][data-x-position="center"] [data-sonner-toast] {
-    position: fixed !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
+@layer utilities {
+  /* eslint-disable tailwindcss/no-important */
+  @media (max-width: 600px) {
+    [data-sonner-toaster][data-x-position="center"] {
+      left: 50% !important;
+      right: auto !important;
+      width: calc(100vw - var(--mobile-offset-left, 16px) * 2) !important;
+      transform: translateX(-50%) !important;
+    }
   }
+  /* eslint-enable tailwindcss/no-important */
 }
-/* eslint-enable tailwindcss/no-important */
