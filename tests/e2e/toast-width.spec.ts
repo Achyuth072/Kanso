@@ -253,8 +253,12 @@ test.describe("Sonner toast width", () => {
   });
 
   test("toast is horizontally centered on mobile viewport (360px)", async () => {
-    const browser = await chromium.connectOverCDP("http://localhost:9222");
-    const context = browser.contexts()[0] ?? (await browser.newContext());
+    // Uses Playwright's bundled Chromium (no CDP / no system Chrome required).
+    // Viewport is fixed at context creation so Sonner's ≤600px mobile rules fire.
+    const browser = await chromium.launch();
+    const context = await browser.newContext({
+      viewport: { width: 360, height: 640 },
+    });
     await context.addCookies([
       {
         name: "kanso_guest_mode",
@@ -263,7 +267,6 @@ test.describe("Sonner toast width", () => {
       },
     ]);
     const page = await context.newPage();
-    await page.setViewportSize({ width: 360, height: 640 });
 
     try {
       await page.addInitScript(() => {
