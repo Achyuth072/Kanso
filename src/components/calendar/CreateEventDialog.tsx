@@ -342,10 +342,7 @@ export function CreateEventDialog({
                   className="w-auto p-0 overflow-hidden"
                   align="start"
                   collisionPadding={16}
-                  style={{
-                    maxHeight:
-                      "min(380px, var(--radix-popover-content-available-height, 80dvh))",
-                  }}
+                  style={{ maxHeight: "min(380px, var(--radix-popover-content-available-height, 80dvh))" }}
                 >
                   <DateTimeWizard
                     date={safeStartDate}
@@ -381,10 +378,7 @@ export function CreateEventDialog({
                   className="w-auto p-0 overflow-hidden"
                   align="start"
                   collisionPadding={16}
-                  style={{
-                    maxHeight:
-                      "min(380px, var(--radix-popover-content-available-height, 80dvh))",
-                  }}
+                  style={{ maxHeight: "min(380px, var(--radix-popover-content-available-height, 80dvh))" }}
                 >
                   <DateTimeWizard
                     date={safeEndDate}

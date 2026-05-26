@@ -18,19 +18,11 @@ describe("DateTimeWizard scroll isolation from Dialog/Drawer scroll-lock", () =>
 
   beforeEach(() => {
     documentWheelHandler = vi.fn() as EventListener & ReturnType<typeof vi.fn>;
-    documentTouchMoveHandler = vi.fn() as EventListener &
-      ReturnType<typeof vi.fn>;
-    documentTouchStartHandler = vi.fn() as EventListener &
-      ReturnType<typeof vi.fn>;
-    document.addEventListener("wheel", documentWheelHandler, {
-      passive: false,
-    });
-    document.addEventListener("touchmove", documentTouchMoveHandler, {
-      passive: false,
-    });
-    document.addEventListener("touchstart", documentTouchStartHandler, {
-      passive: false,
-    });
+    documentTouchMoveHandler = vi.fn() as EventListener & ReturnType<typeof vi.fn>;
+    documentTouchStartHandler = vi.fn() as EventListener & ReturnType<typeof vi.fn>;
+    document.addEventListener("wheel", documentWheelHandler, { passive: false });
+    document.addEventListener("touchmove", documentTouchMoveHandler, { passive: false });
+    document.addEventListener("touchstart", documentTouchStartHandler, { passive: false });
   });
 
   afterEach(() => {
@@ -63,11 +55,7 @@ describe("DateTimeWizard scroll isolation from Dialog/Drawer scroll-lock", () =>
     const { container } = renderWizard(true);
     const scroll = getScrollContainer(container);
 
-    const event = new WheelEvent("wheel", {
-      bubbles: true,
-      cancelable: true,
-      deltaY: 100,
-    });
+    const event = new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY: 100 });
     scroll.dispatchEvent(event);
 
     expect(documentWheelHandler).not.toHaveBeenCalled();
@@ -97,11 +85,7 @@ describe("DateTimeWizard scroll isolation from Dialog/Drawer scroll-lock", () =>
     const { container } = renderWizard(false);
     const scroll = getScrollContainer(container);
 
-    const event = new WheelEvent("wheel", {
-      bubbles: true,
-      cancelable: true,
-      deltaY: 100,
-    });
+    const event = new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY: 100 });
     scroll.dispatchEvent(event);
 
     expect(documentWheelHandler).not.toHaveBeenCalled();
