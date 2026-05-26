@@ -16,7 +16,7 @@ export function Toaster() {
       position="bottom-center"
       expand={true}
       duration={4000}
-      style={{ zIndex: 50 }}
+      style={{ zIndex: 70 }}
       mobileOffset={{ left: 16, right: 16, bottom: 16 }}
       swipeDirections={["bottom"]}
       toastOptions={{
