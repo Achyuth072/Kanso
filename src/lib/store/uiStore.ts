@@ -60,6 +60,9 @@ interface UiState {
   setLastSeenVersion: (version: string) => void;
   lastDismissedVersion: string;
   setLastDismissedVersion: (version: string) => void;
+  // Ephemeral: true when server has a version newer than lastDismissedVersion
+  hasChangelogUpdate: boolean;
+  setHasChangelogUpdate: (has: boolean) => void;
 
   // Hydration state
   _hasHydrated: boolean;
@@ -135,6 +138,8 @@ export const useUiStore = create<UiState>()(
       lastDismissedVersion: "",
       setLastDismissedVersion: (version) =>
         set({ lastDismissedVersion: version }),
+      hasChangelogUpdate: false,
+      setHasChangelogUpdate: (has) => set({ hasChangelogUpdate: has }),
 
       // Hydration
       _hasHydrated: false,
@@ -159,6 +164,8 @@ export const useUiStore = create<UiState>()(
           setIsFullscreen: _setIsFullscreen,
           isSynced: _isSynced,
           setIsSynced: _setIsSynced,
+          hasChangelogUpdate: _hasChangelogUpdate,
+          setHasChangelogUpdate: _setHasChangelogUpdate,
           ...rest
         } = state;
         return rest;

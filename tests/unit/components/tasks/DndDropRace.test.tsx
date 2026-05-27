@@ -266,6 +266,8 @@ describe("TaskList drop race condition (residual snap-back)", () => {
         setIsFullscreen: vi.fn(),
         isSynced: false,
         setIsSynced: vi.fn(),
+        hasChangelogUpdate: false,
+        setHasChangelogUpdate: vi.fn(),
       }),
     );
   });

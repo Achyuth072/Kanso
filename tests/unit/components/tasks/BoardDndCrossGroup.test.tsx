@@ -273,6 +273,8 @@ describe("TaskBoard — cross-group snap-back regression", () => {
         setIsFullscreen: vi.fn(),
         isSynced: false,
         setIsSynced: vi.fn(),
+        hasChangelogUpdate: false,
+        setHasChangelogUpdate: vi.fn(),
       }),
     );
   });

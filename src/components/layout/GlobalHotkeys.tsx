@@ -41,6 +41,7 @@ export function GlobalHotkeys({
   const isChangelogOpen = useUiStore((state) => state.isChangelogOpen);
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
+  // True when any overlay that captures keyboard input is open
   const isOtherModalOpen =
     isAddTaskOpen ||
     isHabitSheetOpen ||

@@ -39,12 +39,14 @@ import {
   ArchiveRestore,
   EllipsisVertical,
   Pencil,
+  Sparkles,
 } from "lucide-react";
 import { useCompletedTasks } from "@/components/CompletedTasksProvider";
 import { useProjects } from "@/lib/hooks/useProjects";
 import { useProjectActions } from "@/components/ProjectActionsProvider";
 import { useUiStore } from "@/lib/store/uiStore";
 import { useHaptic } from "@/lib/hooks/useHaptic";
+import { invalidateChangelogCache } from "@/lib/changelog-cache";
 import { ArchivedProjectsDialog } from "@/components/projects/ArchivedProjectsDialog";
 import {
   Drawer,
@@ -86,6 +88,8 @@ export function AppSidebar() {
     useProjectActions();
   const isProjectsOpen = useUiStore((state) => state.isProjectsOpen);
   const toggleProjectsOpen = useUiStore((state) => state.toggleProjectsOpen);
+  const hasChangelogUpdate = useUiStore((state) => state.hasChangelogUpdate);
+  const setChangelogOpen = useUiStore((state) => state.setChangelogOpen);
   const { trigger } = useHaptic();
 
   const [mobileActionProject, setMobileActionProject] =
@@ -430,6 +434,27 @@ export function AppSidebar() {
                     </div>
                     <span>Settings</span>
                   </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          )}
+
+          {!isMobile && hasChangelogUpdate && (
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => {
+                    invalidateChangelogCache();
+                    setChangelogOpen(true);
+                  }}
+                  tooltip="What's New"
+                  className="text-foreground/70"
+                >
+                  <div className="relative flex items-center justify-center w-5 h-5 shrink-0">
+                    <Sparkles className="h-4 w-4" strokeWidth={2.25} />
+                    <span className="absolute -top-1 -right-1 h-1.5 w-1.5 rounded-full bg-brand animate-pulse" />
+                  </div>
+                  <span>What&apos;s New</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
