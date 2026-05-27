@@ -258,7 +258,7 @@ export function SegmentedTimePicker({
               onFocus={() => handleFocus("h")}
               onBlur={() => setActiveSegment(null)}
               onKeyDown={(e) => handleKeyDown(e, "h")}
-              onWheelCapture={(e) => handleWheel(e, "h")}
+              onWheel={(e) => handleWheel(e, "h")}
               onPointerDown={handlePointerDown}
               onPointerUp={(e) => handlePointerUp(e, "h")}
               onChange={(e) => {
@@ -306,7 +306,7 @@ export function SegmentedTimePicker({
               onFocus={() => handleFocus("m")}
               onBlur={() => setActiveSegment(null)}
               onKeyDown={(e) => handleKeyDown(e, "m")}
-              onWheelCapture={(e) => handleWheel(e, "m")}
+              onWheel={(e) => handleWheel(e, "m")}
               onPointerDown={handlePointerDown}
               onPointerUp={(e) => handlePointerUp(e, "m")}
               onChange={(e) => {
