@@ -109,8 +109,7 @@ interface AppShellProps {
   children: React.ReactNode;
 }
 
-// Watches app version, syncs hasChangelogUpdate to store, and renders the popup.
-// The trigger button lives in AppSidebar so it stays inside the sidebar layout.
+// Watches app version, syncs hasChangelogUpdate to store, renders the popup
 function ChangelogPopupWatcher() {
   const lastDismissedVersion = useUiStore(
     (state) => state.lastDismissedVersion,
