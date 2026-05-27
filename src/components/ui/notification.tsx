@@ -3,6 +3,7 @@
 import { Toaster as SonnerToaster } from "sonner";
 import { Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { useUiStore } from "@/lib/store/uiStore";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -11,11 +12,12 @@ const inter = Inter({
 });
 
 export function Toaster() {
+  const isChangelogOpen = useUiStore((state) => state.isChangelogOpen);
   return (
     <SonnerToaster
       position="bottom-center"
       expand={true}
-      duration={4000}
+      duration={isChangelogOpen ? Infinity : 4000}
       style={{ zIndex: 70 }}
       mobileOffset={{ left: 16, right: 16, bottom: 16 }}
       swipeDirections={["bottom"]}
