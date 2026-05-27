@@ -46,7 +46,6 @@ import { useProjects } from "@/lib/hooks/useProjects";
 import { useProjectActions } from "@/components/ProjectActionsProvider";
 import { useUiStore } from "@/lib/store/uiStore";
 import { useHaptic } from "@/lib/hooks/useHaptic";
-import { invalidateChangelogCache } from "@/lib/changelog-cache";
 import { ArchivedProjectsDialog } from "@/components/projects/ArchivedProjectsDialog";
 import {
   Drawer,
@@ -443,10 +442,7 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  onClick={() => {
-                    invalidateChangelogCache();
-                    setChangelogOpen(true);
-                  }}
+                  onClick={() => setChangelogOpen(true)}
                   tooltip="What's New"
                   className="text-foreground/70"
                 >
