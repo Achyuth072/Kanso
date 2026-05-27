@@ -8,6 +8,7 @@ import packageJson from "../../../package.json";
 const { version } = packageJson;
 import type { Project } from "@/lib/types/task";
 import {
+  SIDEBAR_COLLAPSE,
   Sidebar,
   SidebarContent,
   SidebarGroup,
@@ -111,16 +112,13 @@ export function AppSidebar() {
     <>
       <Sidebar variant="sidebar" collapsible="icon" className="h-screen">
         <SidebarHeader>
-          <div className="flex items-center py-2 h-14">
-            {/* K logo — always in-flow, centers naturally in 48px icon-width sidebar when collapsed */}
+          <div className="flex items-center py-2 h-14 pl-0.5">
+            {/* K logo — always in-flow, left-aligned matching nav icons */}
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-semibold shrink-0">
               K
             </div>
-            {/* Label + trigger fade in/out coordinated with sidebar width via CSS */}
-            <div
-              className="flex items-center justify-between overflow-hidden ml-2 flex-1 transition-all duration-300 ease-seijaku group-data-[state=collapsed]:opacity-0 group-data-[state=collapsed]:w-0"
-              style={{ minWidth: 0 }}
-            >
+            {/* Label + trigger hidden when collapsed (matching nav item pattern) */}
+            <div className={cn("flex items-center justify-between ml-2 flex-1", SIDEBAR_COLLAPSE.hideContent)}>
               <span className="type-h2 whitespace-nowrap">Kanso</span>
               <SidebarTrigger className="h-9 w-9 shrink-0 active:scale-95 transition-all [&_svg]:stroke-[2.25px]" />
             </div>
@@ -171,7 +169,9 @@ export function AppSidebar() {
                               }
                             }}
                           >
-                            <Icon className="h-5 w-5" strokeWidth={2.25} />
+                            <div className="flex items-center justify-center w-5 h-5 shrink-0">
+                              <Icon className="h-4 w-4" strokeWidth={2.25} />
+                            </div>
                             <span>{item.label}</span>
                           </Link>
                         </SidebarMenuButton>
@@ -376,7 +376,9 @@ export function AppSidebar() {
                               trigger("toggle");
                             }}
                           >
-                            <Icon className="h-5 w-5" strokeWidth={2.25} />
+                            <div className="flex items-center justify-center w-5 h-5 shrink-0">
+                              <Icon className="h-4 w-4" strokeWidth={2.25} />
+                            </div>
                             <span>{item.label}</span>
                           </Link>
                         </SidebarMenuButton>
@@ -404,7 +406,9 @@ export function AppSidebar() {
                       handleMobileRouteIntent();
                     }}
                   >
-                    <Timer className="h-5 w-5" strokeWidth={2.25} />
+                    <div className="flex items-center justify-center w-5 h-5 shrink-0">
+                      <Timer className="h-4 w-4" strokeWidth={2.25} />
+                    </div>
                     <span>Focus</span>
                   </Link>
                 </SidebarMenuButton>
@@ -421,7 +425,9 @@ export function AppSidebar() {
                       handleMobileRouteIntent();
                     }}
                   >
-                    <Settings className="h-5 w-5" strokeWidth={2.25} />
+                    <div className="flex items-center justify-center w-5 h-5 shrink-0">
+                      <Settings className="h-4 w-4" strokeWidth={2.25} />
+                    </div>
                     <span>Settings</span>
                   </Link>
                 </SidebarMenuButton>

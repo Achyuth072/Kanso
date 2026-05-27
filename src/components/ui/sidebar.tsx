@@ -30,8 +30,14 @@ const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 const SIDEBAR_WIDTH = "12rem";
 const SIDEBAR_WIDTH_MOBILE = "68vw";
-const SIDEBAR_WIDTH_ICON = "3rem";
+const SIDEBAR_WIDTH_ICON = "3.25rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
+
+const SIDEBAR_COLLAPSE = {
+  hideContent: "group-data-[collapsible=icon]:hidden",
+  hideLabelSpan: "group-data-[collapsible=icon]:[&>span:last-child]:hidden",
+  iconButton: "group-data-[collapsible=icon]:!size-9 group-data-[collapsible=icon]:!p-2 group-data-[collapsible=icon]:gap-0",
+} as const;
 
 type SidebarContextProps = {
   state: "expanded" | "collapsed";
@@ -87,11 +93,11 @@ const SidebarProvider = React.forwardRef<
 
     const [_open, _setOpen] = React.useState(defaultOpen);
     const open = openProp ?? _open;
+
     const setOpen = React.useCallback(
       (value: boolean | ((value: boolean) => boolean)) => {
         const openState = typeof value === "function" ? value(open) : value;
 
-        // Dispatch transition start event before state change
         window.dispatchEvent(new CustomEvent("sidebar-transition-start"));
 
         if (setOpenProp) {
@@ -283,7 +289,7 @@ const Sidebar = React.forwardRef<
         >
           <div
             data-sidebar="sidebar"
-            className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
+            className="flex h-full w-full flex-col overflow-x-hidden bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
           >
             {children}
           </div>
@@ -458,7 +464,7 @@ const SidebarGroup = React.forwardRef<
     <div
       ref={ref}
       data-sidebar="group"
-      className={cn("relative flex w-full min-w-0 flex-col p-2 group-data-[collapsible=icon]:px-0", className)}
+      className={cn("relative flex w-full min-w-0 flex-col p-2", className)}
       {...props}
     />
   );
@@ -553,7 +559,7 @@ const SidebarMenuItem = React.forwardRef<
 SidebarMenuItem.displayName = "SidebarMenuItem";
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left outline-none ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-primary data-[active=true]:font-medium data-[active=true]:text-sidebar-primary-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:!size-9 group-data-[collapsible=icon]:!p-2 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:[&>span:last-child]:hidden [&>span:last-child]:truncate [&>svg]:shrink-0",
+  `peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left outline-none ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-primary data-[active=true]:font-medium data-[active=true]:text-sidebar-primary-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground ${SIDEBAR_COLLAPSE.iconButton} ${SIDEBAR_COLLAPSE.hideLabelSpan} [&>span:last-child]:truncate [&>svg]:shrink-0`,
   {
     variants: {
       variant: {
@@ -565,7 +571,7 @@ const sidebarMenuButtonVariants = cva(
         default: "h-9 text-[13px] font-medium [&>svg]:size-4",
         sm: "h-7 text-[11px] [&>svg]:size-3.5",
         md: "h-10 text-[15px] [&>svg]:size-5",
-        lg: "h-12 text-base group-data-[collapsible=icon]:!p-0 [&>svg]:size-6",
+        lg: "h-12 text-base [&>svg]:size-6",
       },
     },
     defaultVariants: {
@@ -789,6 +795,7 @@ const SidebarMenuSubButton = React.forwardRef<
 SidebarMenuSubButton.displayName = "SidebarMenuSubButton";
 
 export {
+  SIDEBAR_COLLAPSE,
   Sidebar,
   SidebarContent,
   SidebarFooter,
