@@ -258,13 +258,7 @@ export function NotificationSettings() {
             </TooltipContent>
           )}
         </Tooltip>
-        {isGuestMode && (
-          <p className="text-xs text-muted-foreground text-center md:hidden">
-            Sign in to enable push notifications
-          </p>
-        )}
-
-        {permission === "granted" && notificationsEnabled && !isSyncing && (
+        {!isGuestMode && permission === "granted" && notificationsEnabled && !isSyncing && (
           <div className="flex flex-col gap-2">
             <Button
               variant="outline"
@@ -403,11 +397,6 @@ export function NotificationSettings() {
         </div>
       )}
 
-      {isGuestMode && permission === "granted" && (
-        <p className="text-xs text-center text-muted-foreground px-2">
-          Morning briefings and server-side alerts require a synced account.
-        </p>
-      )}
     </div>
   );
 }
