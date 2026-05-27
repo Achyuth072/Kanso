@@ -39,7 +39,6 @@ import {
   ArchiveRestore,
   EllipsisVertical,
   Pencil,
-  Sparkles,
 } from "lucide-react";
 import { useCompletedTasks } from "@/components/CompletedTasksProvider";
 import { useProjects } from "@/lib/hooks/useProjects";
@@ -87,8 +86,6 @@ export function AppSidebar() {
     useProjectActions();
   const isProjectsOpen = useUiStore((state) => state.isProjectsOpen);
   const toggleProjectsOpen = useUiStore((state) => state.toggleProjectsOpen);
-  const hasChangelogUpdate = useUiStore((state) => state.hasChangelogUpdate);
-  const setChangelogOpen = useUiStore((state) => state.setChangelogOpen);
   const { trigger } = useHaptic();
 
   const [mobileActionProject, setMobileActionProject] =
@@ -121,12 +118,7 @@ export function AppSidebar() {
               K
             </div>
             {/* Label + trigger hidden when collapsed (matching nav item pattern) */}
-            <div
-              className={cn(
-                "flex items-center justify-between ml-2 flex-1",
-                SIDEBAR_COLLAPSE.hideContent,
-              )}
-            >
+            <div className={cn("flex items-center justify-between ml-2 flex-1", SIDEBAR_COLLAPSE.hideContent)}>
               <span className="type-h2 whitespace-nowrap">Kanso</span>
               <SidebarTrigger className="h-9 w-9 shrink-0 active:scale-95 transition-all [&_svg]:stroke-[2.25px]" />
             </div>
@@ -438,24 +430,6 @@ export function AppSidebar() {
                     </div>
                     <span>Settings</span>
                   </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          )}
-
-          {!isMobile && hasChangelogUpdate && (
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => setChangelogOpen(true)}
-                  tooltip="What's New"
-                  className="text-foreground/70"
-                >
-                  <div className="relative flex items-center justify-center w-5 h-5 shrink-0">
-                    <Sparkles className="h-4 w-4" strokeWidth={2.25} />
-                    <span className="absolute -top-1 -right-1 h-1.5 w-1.5 rounded-full bg-brand animate-pulse" />
-                  </div>
-                  <span>What&apos;s New</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
