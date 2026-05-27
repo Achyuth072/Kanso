@@ -237,7 +237,39 @@ export function DateTimeWizard({
               onChange={handleTimeChange}
             />
 
-            <div className="mt-4 w-full flex justify-end">
+            {/* Quick Time Presets */}
+            <div className="grid grid-cols-4 gap-1.5 mt-4 p-1 bg-muted/20 rounded-md border border-border/50">
+              {[
+                { label: "Morning", hour: 9 },
+                { label: "Afternoon", hour: 13 },
+                { label: "Evening", hour: 18 },
+                { label: "Night", hour: 21 },
+              ].map(({ label, hour }) => (
+                <Button
+                  key={label}
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-[10px] sm:text-xs font-semibold hover:bg-background hover:shadow-sm flex flex-col gap-0 leading-none py-1"
+                  onClick={() => {
+                    trigger("tick");
+                    const d = new Date(tempDate || new Date());
+                    d.setHours(hour, 0, 0, 0);
+                    setTempDate(d);
+                  }}
+                >
+                  <span>{label}</span>
+                  <span className="text-[9px] font-normal opacity-60">
+                    {hour < 12
+                      ? `${hour}am`
+                      : hour === 12
+                        ? "12pm"
+                        : `${hour - 12}pm`}
+                  </span>
+                </Button>
+              ))}
+            </div>
+
+            <div className="mt-2 w-full flex justify-end">
               <Button size="sm" className="gap-1.5 w-full" onClick={onSave}>
                 <Check className="w-3.5 h-3.5" />
                 Done
