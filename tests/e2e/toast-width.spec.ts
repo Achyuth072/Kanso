@@ -234,7 +234,8 @@ test.describe("Sonner toast width", () => {
       });
 
       console.log(
-        "[toast-singleline measurement]\n" + JSON.stringify(measurement, null, 2),
+        "[toast-singleline measurement]\n" +
+          JSON.stringify(measurement, null, 2),
       );
 
       if (!measurement.ok) {

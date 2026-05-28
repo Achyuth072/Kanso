@@ -19,17 +19,18 @@ const PiPContext = createContext<PiPContextType | null>(null);
 
 export function PiPProvider({ children }: { children: ReactNode }) {
   const pip = useDocumentPiP();
+  const { isPiPActive, closePiP } = pip;
   const isFullscreen = useUiStore((state) => state.isFullscreen);
 
   // D-09 reactive close: when fullscreen activates, close any active PiP
   // This handles both Chrome Document PiP and Firefox popup fallback
-  // (useDocumentPiP's closePiP correctly closes both types).
+  // (closePiP correctly closes both types).
   // Exiting fullscreen does NOT auto-restore PiP (D-09 contract).
   useEffect(() => {
-    if (isFullscreen && pip.isPiPActive) {
-      pip.closePiP();
+    if (isFullscreen && isPiPActive) {
+      closePiP();
     }
-  }, [isFullscreen, pip.isPiPActive, pip.closePiP]);
+  }, [isFullscreen, isPiPActive, closePiP]);
 
   // D-09 mutual exclusion: block PiP when fullscreen is active
   const openPiPWithGuard = async (width?: number, height?: number) => {

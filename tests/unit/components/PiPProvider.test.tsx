@@ -60,7 +60,13 @@ function PiPContextConsumer() {
  * A wrapper that re-mounts children when `key` changes.
  * This forces React reconciliation and re-reads the mocked modules.
  */
-function TestHarness({ children, key }: { children: React.ReactNode; key: string }) {
+function TestHarness({
+  children,
+  key,
+}: {
+  children: React.ReactNode;
+  key: string;
+}) {
   return <div key={key}>{children}</div>;
 }
 

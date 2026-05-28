@@ -30,13 +30,8 @@ import { cn } from "@/lib/utils";
 const ACTIVE_CLASSES =
   "text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 hover:text-muted-foreground hover:underline underline-offset-4 transition-colors duration-150 cursor-pointer";
 
-const INACTIVE_CLASSES =
-  "text-[13px] text-muted-foreground opacity-0 pointer-events-none";
-
 export function CancelSessionButton() {
-  const { isRunning, remainingSeconds } = useTimerStore(
-    (state) => state.state,
-  );
+  const { isRunning, remainingSeconds } = useTimerStore((state) => state.state);
   const totalSeconds = useTimerStore((state) => {
     const settings = state.settings;
     const mode = state.state.mode;

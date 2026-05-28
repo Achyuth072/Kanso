@@ -27,10 +27,7 @@ export function useFullscreen() {
 
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => {
-      document.removeEventListener(
-        "fullscreenchange",
-        handleFullscreenChange,
-      );
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, [setIsFullscreen]);
 

@@ -57,7 +57,6 @@ export function FocusTaskPicker() {
 
   // Timer store selectors
   const activeTaskId = useTimerStore((s) => s.state.activeTaskId);
-  const isRunning = useTimerStore((s) => s.state.isRunning);
   const taskSwitchBehavior = useTimerStore(
     (s) => s.settings.taskSwitchBehavior,
   );
@@ -148,7 +147,10 @@ export function FocusTaskPicker() {
     const today: Task[] = [];
     for (const task of pickerTasks || []) {
       const dateStr = task.do_date || task.due_date;
-      if (!dateStr) { overdue.push(task); continue; }
+      if (!dateStr) {
+        overdue.push(task);
+        continue;
+      }
       const date = parseISO(dateStr);
       if (isToday(date)) today.push(task);
       else if (isBefore(date, todayStart)) overdue.push(task);
@@ -218,9 +220,7 @@ export function FocusTaskPicker() {
     if (total === 0) {
       return (
         <div className="py-8 text-center">
-          <p className="text-[13px] text-muted-foreground">
-            Nothing due today
-          </p>
+          <p className="text-[13px] text-muted-foreground">Nothing due today</p>
           <p className="text-[13px] text-muted-foreground mt-1">
             Tasks scheduled for today will appear here.
           </p>
@@ -264,7 +264,10 @@ export function FocusTaskPicker() {
             {task.content}
           </span>
           {isActive && (
-            <Check className="h-3.5 w-3.5 text-brand shrink-0" strokeWidth={2.25} />
+            <Check
+              className="h-3.5 w-3.5 text-brand shrink-0"
+              strokeWidth={2.25}
+            />
           )}
         </button>
       );
@@ -278,7 +281,9 @@ export function FocusTaskPicker() {
             <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               {label}
             </span>
-            <span className="text-[11px] text-muted-foreground/50">{tasks.length}</span>
+            <span className="text-[11px] text-muted-foreground/50">
+              {tasks.length}
+            </span>
           </div>
           {tasks.map(renderTaskRow)}
         </div>

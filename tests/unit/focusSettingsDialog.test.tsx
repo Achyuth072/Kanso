@@ -250,6 +250,7 @@ describe("FocusSettingsDialog — Toggle Behavior", () => {
         sessionsBeforeLongBreak: 4,
         autoStartBreak: true,
         autoStartFocus: false,
+        taskSwitchBehavior: "keepRunning" as const,
       };
 
       // When: parsed
