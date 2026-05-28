@@ -1,7 +1,7 @@
 "use client";
 
 import { format, isSameDay } from "date-fns";
-import { memo, useEffect, useMemo, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import { useSwipe } from "@/lib/hooks/useSwipe";
 import { useCalendarStore } from "@/lib/calendar/store";
 import { useTimeFormat } from "@/lib/hooks/useTimeFormat";
@@ -11,6 +11,7 @@ import type { CalendarEvent } from "@/lib/calendar/types";
 import { CurrentTimeIndicator } from "./CurrentTimeIndicator";
 
 const HOUR_HEIGHT = 120; // 60 minutes * 2 pixels
+const HEADER_HEIGHT = 64; // matches CurrentTimeIndicator's grid offset
 
 interface TimeGridProps {
   startDate: Date;
@@ -31,7 +32,7 @@ export function TimeGrid({
   className,
   "data-testid": testId,
 }: TimeGridProps) {
-  const { next, prev } = useCalendarStore();
+  const { next, prev, todayNonce } = useCalendarStore();
   const { formatTime } = useTimeFormat();
   const swipeHandlers = useSwipe({
     onSwipeLeft: () => next(),
@@ -48,17 +49,25 @@ export function TimeGrid({
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to current time on mount
-  useEffect(() => {
-    if (scrollRef.current) {
-      const now = new Date();
-      const currentHour = now.getHours();
-      const currentMinute = now.getMinutes();
-      const scrollPos =
-        currentHour * HOUR_HEIGHT + (currentMinute / 60) * HOUR_HEIGHT;
-      scrollRef.current.scrollTop = Math.max(0, scrollPos - 120);
-    }
+  // Center the now-indicator in the viewport.
+  const scrollToNow = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const now = new Date();
+    const minutesFromMidnight = now.getHours() * 60 + now.getMinutes();
+    const indicatorTop = (minutesFromMidnight / 60) * HOUR_HEIGHT + HEADER_HEIGHT;
+    el.scrollTop = Math.max(0, indicatorTop - el.clientHeight / 2);
   }, []);
+
+  // Auto-scroll to current time on mount.
+  useEffect(() => {
+    scrollToNow();
+  }, [scrollToNow]);
+
+  // Re-center when the user presses "Today".
+  useEffect(() => {
+    if (todayNonce > 0) scrollToNow();
+  }, [todayNonce, scrollToNow]);
 
   return (
     <div
@@ -142,7 +151,7 @@ export function TimeGrid({
               ))}
 
               {/* Current Time Indicator */}
-              {isToday && <CurrentTimeIndicator />}
+              {isToday && <CurrentTimeIndicator compact={daysToShow === 7} />}
 
               {/* Render Events for this Day */}
               {column.events.map((event) => {
