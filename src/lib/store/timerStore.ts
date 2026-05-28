@@ -15,6 +15,8 @@ interface TimerStore {
   start: (taskId?: string) => void;
   pause: () => void;
   stop: () => void;
+  cancel: () => void;
+  setActiveTaskId: (taskId: string | null) => void;
   skip: () => void;
   tick: () => void;
   updateSettings: (newSettings: Partial<TimerSettings>) => void;
@@ -83,6 +85,29 @@ export const useTimerStore = create<TimerStore>()(
         set({
           state: getInitialState(settings),
         });
+      },
+
+      cancel: () => {
+        const { settings, state } = get();
+        const rolledBack =
+          state.mode === "focus"
+            ? state.completedSessions
+            : Math.max(0, state.completedSessions - 1);
+        set({
+          state: {
+            ...getInitialState(settings),
+            completedSessions: rolledBack,
+          },
+        });
+      },
+
+      setActiveTaskId: (taskId: string | null) => {
+        set((s) => ({
+          state: {
+            ...s.state,
+            activeTaskId: taskId,
+          },
+        }));
       },
 
       skip: () => {

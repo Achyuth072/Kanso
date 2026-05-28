@@ -52,4 +52,32 @@ describe("useUiStore", () => {
     useUiStore.getState().setShortcutsHelpOpen((prev) => !prev);
     expect(useUiStore.getState().isShortcutsHelpOpen).toBe(false);
   });
+
+  describe("isFullscreen", () => {
+    it("should default to false", () => {
+      expect(useUiStore.getState().isFullscreen).toBe(false);
+    });
+
+    it("should allow setting fullscreen state", () => {
+      useUiStore.getState().setIsFullscreen(true);
+      expect(useUiStore.getState().isFullscreen).toBe(true);
+
+      useUiStore.getState().setIsFullscreen(false);
+      expect(useUiStore.getState().isFullscreen).toBe(false);
+    });
+  });
+
+  describe("isSynced", () => {
+    it("should default to false", () => {
+      expect(useUiStore.getState().isSynced).toBe(false);
+    });
+
+    it("should allow setting sync state", () => {
+      useUiStore.getState().setIsSynced(true);
+      expect(useUiStore.getState().isSynced).toBe(true);
+
+      useUiStore.getState().setIsSynced(false);
+      expect(useUiStore.getState().isSynced).toBe(false);
+    });
+  });
 });

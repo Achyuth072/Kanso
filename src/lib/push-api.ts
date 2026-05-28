@@ -16,7 +16,7 @@ export async function syncPushSubscription(subscription: PushSubscription) {
     throw new Error(errorData.error || "Failed to sync push subscription");
   }
 
-  return response.json();
+  return response.json().catch(() => ({}));
 }
 
 export async function removePushSubscription(endpoint: string) {
@@ -32,7 +32,7 @@ export async function removePushSubscription(endpoint: string) {
     throw new Error(errorData.error || "Failed to remove push subscription");
   }
 
-  return response.json();
+  return response.json().catch(() => ({}));
 }
 
 export interface SendPushParams {

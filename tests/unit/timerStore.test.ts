@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useTimerStore } from "@/lib/store/timerStore";
 import { DEFAULT_TIMER_SETTINGS } from "@/lib/types/timer";
+import type { TimerSettings } from "@/lib/types/timer";
 
 /**
  * Timer Store Test Perspectives
@@ -126,5 +127,225 @@ describe("useTimerStore", () => {
     const { state, settings } = useTimerStore.getState();
     expect(settings.focusDuration).toBe(30);
     expect(state.remainingSeconds).toBe(1800);
+  });
+
+  describe("cancel", () => {
+    it("should preserve completedSessions while resetting all other timer state", () => {
+      // Given: A running timer with 3 completed sessions and some progress
+      useTimerStore.setState((s) => ({
+        state: {
+          ...s.state,
+          isRunning: true,
+          remainingSeconds: 500,
+          completedSessions: 3,
+          activeTaskId: "task-1",
+          startedAt: Date.now(),
+        },
+      }));
+
+      // When: Cancelling the timer
+      useTimerStore.getState().cancel();
+
+      // Then: completedSessions preserved, everything else reset
+      const { state, settings } = useTimerStore.getState();
+      expect(state.mode).toBe("focus");
+      expect(state.isRunning).toBe(false);
+      expect(state.remainingSeconds).toBe(settings.focusDuration * 60);
+      expect(state.activeTaskId).toBeNull();
+      expect(state.startedAt).toBeNull();
+      expect(state.completedSessions).toBe(3);
+    });
+
+    it("should preserve completedSessions at 3 after cancel", () => {
+      // Given: A running timer with 3 completed sessions
+      useTimerStore.setState((s) => ({
+        state: {
+          ...s.state,
+          isRunning: true,
+          remainingSeconds: 800,
+          completedSessions: 3,
+          activeTaskId: "task-2",
+          startedAt: Date.now(),
+        },
+      }));
+
+      // When: Cancelling the timer
+      useTimerStore.getState().cancel();
+
+      // Then: completedSessions remains 3
+      expect(useTimerStore.getState().state.completedSessions).toBe(3);
+    });
+
+    it("should allow stop() after cancel to reset completedSessions to 0 (stop semantics unchanged)", () => {
+      // Given: A timer after cancel with completedSessions preserved at 3
+      useTimerStore.setState((s) => ({
+        state: {
+          ...s.state,
+          isRunning: false,
+          remainingSeconds: 1500,
+          completedSessions: 3,
+          activeTaskId: null,
+          startedAt: null,
+        },
+      }));
+
+      // When: Calling stop() after cancel
+      useTimerStore.getState().stop();
+
+      // Then: completedSessions resets to 0 (stop semantics unchanged)
+      expect(useTimerStore.getState().state.completedSessions).toBe(0);
+    });
+
+    it("should NOT dispatch timer-complete event (no session logging triggered by cancel)", () => {
+      // Given: A running timer
+      const dispatchSpy = vi.spyOn(window, "dispatchEvent");
+      useTimerStore.setState((s) => ({
+        state: {
+          ...s.state,
+          isRunning: true,
+          remainingSeconds: 500,
+          completedSessions: 2,
+          activeTaskId: "task-1",
+        },
+      }));
+
+      // When: Cancelling the timer
+      useTimerStore.getState().cancel();
+
+      // Then: No timer-complete custom event should be dispatched
+      const timerCompleteCalls = dispatchSpy.mock.calls.filter(
+        ([event]) =>
+          event instanceof CustomEvent && event.type === "timer-complete",
+      );
+      expect(timerCompleteCalls).toHaveLength(0);
+      dispatchSpy.mockRestore();
+    });
+
+    it("should produce state matching getInitialState except completedSessions is preserved", () => {
+      // Given: A running timer with 4 completed sessions
+      useTimerStore.setState((s) => ({
+        state: {
+          ...s.state,
+          isRunning: true,
+          remainingSeconds: 700,
+          completedSessions: 4,
+          activeTaskId: "task-cancel",
+          startedAt: Date.now(),
+        },
+      }));
+
+      // When: Cancelling the timer
+      useTimerStore.getState().cancel();
+
+      // Then: State matches initial state structure
+      const { state, settings } = useTimerStore.getState();
+      expect(state.mode).toBe("focus");
+      expect(state.isRunning).toBe(false);
+      expect(state.remainingSeconds).toBe(settings.focusDuration * 60);
+      expect(state.activeTaskId).toBeNull();
+      expect(state.startedAt).toBeNull();
+      // EXCEPT completedSessions is preserved
+      expect(state.completedSessions).toBe(4);
+    });
+
+    // ── Gap test-4: rollback after silent completion ──
+
+    it("should roll back completedSessions when cancel is called after silent focus completion (shortBreak case)", () => {
+      // Given: 2 completed sessions, starting the 3rd
+      useTimerStore.setState((s) => ({
+        state: {
+          ...s.state,
+          isRunning: true,
+          completedSessions: 2,
+          activeTaskId: "task-3",
+          startedAt: Date.now(),
+        },
+      }));
+
+      // When: completeTimer fires silently (e.g. via reconcile/tick with autoStartBreak=false)
+      useTimerStore.getState().completeTimer({ skipLog: true });
+      // Mode is now "shortBreak", completedSessions is 3
+      expect(useTimerStore.getState().state.mode).toBe("shortBreak");
+      expect(useTimerStore.getState().state.completedSessions).toBe(3);
+
+      // When: User cancels
+      useTimerStore.getState().cancel();
+
+      // Then: completedSessions should roll back to 2
+      expect(useTimerStore.getState().state.completedSessions).toBe(2);
+    });
+
+    it("should roll back completedSessions when cancel is called after silent focus completion (longBreak case)", () => {
+      // Given: 3 completed sessions, sessionsBeforeLongBreak=4, starting the 4th
+      const longBreakSettings: TimerSettings = {
+        ...DEFAULT_TIMER_SETTINGS,
+        sessionsBeforeLongBreak: 4,
+      };
+      useTimerStore.setState({
+        settings: longBreakSettings,
+        state: {
+          mode: "focus",
+          isRunning: true,
+          remainingSeconds: longBreakSettings.focusDuration * 60,
+          completedSessions: 3,
+          activeTaskId: "task-4",
+          startedAt: Date.now(),
+        },
+      });
+
+      // When: completeTimer fires silently
+      useTimerStore.getState().completeTimer({ skipLog: true });
+      // Mode is now "longBreak", completedSessions is 4
+      expect(useTimerStore.getState().state.mode).toBe("longBreak");
+      expect(useTimerStore.getState().state.completedSessions).toBe(4);
+
+      // When: User cancels
+      useTimerStore.getState().cancel();
+
+      // Then: completedSessions should roll back to 3
+      expect(useTimerStore.getState().state.completedSessions).toBe(3);
+    });
+
+    it("should preserve completedSessions when cancel is called from focus mode (no rollback needed)", () => {
+      // Given: mode is "focus" with 2 completed sessions
+      useTimerStore.setState((s) => ({
+        state: {
+          ...s.state,
+          mode: "focus",
+          isRunning: true,
+          remainingSeconds: 800,
+          completedSessions: 2,
+          activeTaskId: "task-5",
+          startedAt: Date.now(),
+        },
+      }));
+
+      // When: Cancelling directly from focus mode
+      useTimerStore.getState().cancel();
+
+      // Then: completedSessions preserved at 2
+      expect(useTimerStore.getState().state.completedSessions).toBe(2);
+    });
+
+    it("should floor completedSessions at 0 when cancel is called from break mode with 0 completed", () => {
+      // Given: degenerate state — mode is "shortBreak", completedSessions is 0
+      useTimerStore.setState((s) => ({
+        state: {
+          ...s.state,
+          mode: "shortBreak",
+          isRunning: false,
+          remainingSeconds: 300,
+          completedSessions: 0,
+          activeTaskId: null,
+          startedAt: null,
+        },
+      }));
+
+      // When: Cancelling
+      useTimerStore.getState().cancel();
+
+      // Then: completedSessions stays at 0 (Math.max guard)
+      expect(useTimerStore.getState().state.completedSessions).toBe(0);
+    });
   });
 });

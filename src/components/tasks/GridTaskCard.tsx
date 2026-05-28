@@ -29,7 +29,7 @@ interface GridTaskCardProps {
   onSelect?: (task: Task) => void;
   isDesktop: boolean;
   triggerHaptic?: (signature?: "tick" | "toggle" | "thud" | "success") => void;
-  startTimer?: (taskId: string) => void;
+  setActiveTaskId?: (taskId: string) => void;
   toggleExpand?: (e: React.MouseEvent) => void;
   isExpanded?: boolean;
   shouldAnimate?: boolean;
@@ -41,7 +41,7 @@ export const GridTaskCard = memo(function GridTaskCard({
   onSelect,
   isDesktop,
   triggerHaptic,
-  startTimer,
+  setActiveTaskId,
   shouldAnimate: initialShouldAnimate = false,
 }: GridTaskCardProps) {
   const [isCompleting, setIsCompleting] = useState(false);
@@ -73,7 +73,7 @@ export const GridTaskCard = memo(function GridTaskCard({
   const handlePlayFocus = (e: React.MouseEvent) => {
     e.stopPropagation();
     triggerHaptic?.("thud");
-    startTimer?.(task.id);
+    setActiveTaskId?.(task.id);
     router.push("/focus");
   };
 
@@ -92,7 +92,7 @@ export const GridTaskCard = memo(function GridTaskCard({
       handleComplete();
     } else if (info.offset.x < -SWIPE_THRESHOLD && !task.is_completed) {
       triggerHaptic?.("thud");
-      startTimer?.(task.id);
+      setActiveTaskId?.(task.id);
       router.push("/focus");
     }
   };

@@ -16,6 +16,9 @@ interface CalendarStore {
   currentDate: Date;
   view: CalendarView;
   events: CalendarEventUI[];
+  // Bumped on goToToday so time-grid views can scroll to the now-indicator
+  // even when the date is unchanged.
+  todayNonce: number;
 
   // Actions
   setView: (view: CalendarView) => void;
@@ -41,6 +44,7 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
   currentDate: new Date(),
   view: "month",
   events: [],
+  todayNonce: 0,
   isCreateEventOpen: false,
 
   // Actions
@@ -48,7 +52,11 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
 
   setDate: (date) => set({ currentDate: date }),
 
-  goToToday: () => set({ currentDate: new Date() }),
+  goToToday: () =>
+    set((state) => ({
+      currentDate: new Date(),
+      todayNonce: state.todayNonce + 1,
+    })),
 
   next: () => {
     const { currentDate, view } = get();

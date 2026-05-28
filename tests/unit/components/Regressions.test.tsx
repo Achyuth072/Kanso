@@ -64,7 +64,6 @@ describe("Regression Fixes", () => {
 
     const { getByTestId } = render(
       <TimeGrid
-        isMobile={true}
         startDate={startDate}
         daysToShow={7}
         events={[]}

@@ -111,7 +111,7 @@ describe("NotificationSettings Component", () => {
     render(<NotificationSettings />);
 
     expect(
-      screen.getByText(/Server-side alerts require a synced account/i),
+      screen.getByText(/Sign in to enable notifications/i),
     ).toBeInTheDocument();
   });
 

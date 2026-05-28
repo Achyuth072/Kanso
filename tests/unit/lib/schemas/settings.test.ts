@@ -10,6 +10,7 @@ describe("FocusSettingsSchema", () => {
       sessionsBeforeLongBreak: 4,
       autoStartBreak: true,
       autoStartFocus: false,
+      taskSwitchBehavior: "keepRunning",
     };
     const result = FocusSettingsSchema.safeParse(input);
     expect(result.success).toBe(true);

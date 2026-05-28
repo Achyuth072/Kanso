@@ -46,7 +46,7 @@ export function CalendarToolbar({
   }[] = [
     { value: "year", label: "Year", className: "hidden md:flex" },
     { value: "month", label: "Month" },
-    { value: "week", label: "Week" },
+    { value: "week", label: "Week", className: "hidden md:flex" },
     { value: "4day", label: "4-Day", className: "hidden md:flex" },
     { value: "3day", label: "3-Day", className: "flex md:hidden" },
     { value: "day", label: "Day" },

@@ -14,30 +14,47 @@ import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 interface GlobalHotkeysProps {
   setCommandOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
   setHelpOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
+  commandOpen?: boolean;
 }
 
 export function GlobalHotkeys({
   setCommandOpen,
   setHelpOpen,
+  commandOpen,
 }: GlobalHotkeysProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { setTheme, resolvedTheme } = useTheme();
-  const { openAddTask } = useTaskActions();
+  const { openAddTask, isAddTaskOpen } = useTaskActions();
   const { openSheet: openCompletedSheet } = useCompletedTasks();
-  const { openAddHabit } = useHabitActions();
-  const { openCreateProject } = useProjectActions();
-  const { openCreateEvent } = useCalendarStore();
+  const { openAddHabit, isHabitSheetOpen } = useHabitActions();
+  const { openCreateProject, isCreateProjectOpen } = useProjectActions();
+  const { openCreateEvent, isCreateEventOpen } = useCalendarStore();
   const setViewMode = useUiStore((state) => state.setViewMode);
   const setArchivedProjectsOpen = useUiStore(
     (state) => state.setArchivedProjectsOpen,
   );
+  const isShortcutsHelpOpen = useUiStore((state) => state.isShortcutsHelpOpen);
+  const isArchivedProjectsOpen = useUiStore(
+    (state) => state.isArchivedProjectsOpen,
+  );
+  const isChangelogOpen = useUiStore((state) => state.isChangelogOpen);
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
-  // Memoize options to prevent listener thrashing
+  const isOtherModalOpen =
+    isAddTaskOpen ||
+    isHabitSheetOpen ||
+    isCreateProjectOpen ||
+    isCreateEventOpen ||
+    isShortcutsHelpOpen ||
+    isArchivedProjectsOpen ||
+    isChangelogOpen;
+  const isAnyModalOpen = isOtherModalOpen || !!commandOpen;
+
   const options = {
     preventDefault: true,
     enableOnFormTags: false,
+    enabled: !isAnyModalOpen,
   };
 
   // --- ACTIONS ---
@@ -66,7 +83,7 @@ export function GlobalHotkeys({
       if (event.repeat) return;
       setCommandOpen((prev) => !prev);
     },
-    options,
+    { ...options, enabled: !isOtherModalOpen },
   );
 
   // Theme Cycle (t)

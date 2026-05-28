@@ -220,4 +220,106 @@ describe("usePushNotifications", () => {
 
     expect(mockSetNotificationsEnabled).toHaveBeenCalledWith(false);
   });
+
+  it("TC-HOOK-07: should re-validate push subscription on visibility change", async () => {
+    mockNotificationsEnabled = true;
+
+    const subscription = {
+      endpoint: "https://visibility.test",
+      unsubscribe: vi.fn(),
+      toJSON: () => ({}),
+    };
+
+    Object.defineProperty(navigator, "serviceWorker", {
+      value: {
+        ready: Promise.resolve({
+          pushManager: {
+            getSubscription: vi.fn().mockResolvedValue(subscription),
+            subscribe: vi.fn(),
+          },
+          showNotification: vi.fn(),
+        }),
+      },
+      writable: true,
+    });
+
+    // Render with notifications enabled — mount effect syncs subscription
+    await act(async () => {
+      renderHook(() => usePushNotifications());
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+
+    // Clear the mount-time sync call so we can verify visibility-change behavior
+    vi.clearAllMocks();
+
+    // Trigger visibility change: page becomes visible
+    Object.defineProperty(document, "visibilityState", {
+      value: "visible",
+      configurable: true,
+    });
+
+    await act(async () => {
+      document.dispatchEvent(new Event("visibilitychange"));
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+
+    expect(syncPushSubscription).toHaveBeenCalledTimes(1);
+    expect(syncPushSubscription).toHaveBeenCalledWith(subscription);
+  });
+
+  it("TC-HOOK-08: should sync push subscription on visibility change even if endpoint is unchanged", async () => {
+    mockNotificationsEnabled = true;
+
+    const subscription = {
+      endpoint: "https://stable.test",
+      unsubscribe: vi.fn(),
+      toJSON: () => ({}),
+    };
+
+    Object.defineProperty(navigator, "serviceWorker", {
+      value: {
+        ready: Promise.resolve({
+          pushManager: {
+            getSubscription: vi.fn().mockResolvedValue(subscription),
+            subscribe: vi.fn(),
+          },
+          showNotification: vi.fn(),
+        }),
+      },
+      writable: true,
+    });
+
+    // Render with notifications enabled — mount effect syncs
+    await act(async () => {
+      renderHook(() => usePushNotifications());
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+
+    vi.clearAllMocks();
+
+    // First visibility change — should sync
+    Object.defineProperty(document, "visibilityState", {
+      value: "visible",
+      configurable: true,
+    });
+
+    await act(async () => {
+      document.dispatchEvent(new Event("visibilitychange"));
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+
+    expect(syncPushSubscription).toHaveBeenCalledTimes(1);
+    expect(syncPushSubscription).toHaveBeenCalledWith(subscription);
+
+    vi.clearAllMocks();
+
+    // Second visibility change — should sync again even though endpoint is unchanged
+    await act(async () => {
+      document.dispatchEvent(new Event("visibilitychange"));
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+
+    expect(syncPushSubscription).toHaveBeenCalledTimes(1);
+    expect(syncPushSubscription).toHaveBeenCalledWith(subscription);
+  });
 });

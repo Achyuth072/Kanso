@@ -32,6 +32,14 @@ interface UiState {
   isPipActive: boolean;
   setIsPipActive: (active: boolean) => void;
 
+  // Fullscreen State (for cross-hook communication, D-09 mutual exclusion)
+  isFullscreen: boolean;
+  setIsFullscreen: (fullscreen: boolean) => void;
+
+  // Sync State (for sync indicator, D-04)
+  isSynced: boolean;
+  setIsSynced: (synced: boolean) => void;
+
   // Archived Projects Dialog
   isArchivedProjectsOpen: boolean;
   setArchivedProjectsOpen: (open: boolean) => void;
@@ -52,6 +60,9 @@ interface UiState {
   setLastSeenVersion: (version: string) => void;
   lastDismissedVersion: string;
   setLastDismissedVersion: (version: string) => void;
+  // Ephemeral: true when server has a version newer than lastDismissedVersion
+  hasChangelogUpdate: boolean;
+  setHasChangelogUpdate: (has: boolean) => void;
 
   // Hydration state
   _hasHydrated: boolean;
@@ -97,6 +108,14 @@ export const useUiStore = create<UiState>()(
       isPipActive: false,
       setIsPipActive: (active) => set({ isPipActive: active }),
 
+      // Fullscreen State defaults
+      isFullscreen: false,
+      setIsFullscreen: (fullscreen) => set({ isFullscreen: fullscreen }),
+
+      // Sync State defaults
+      isSynced: false,
+      setIsSynced: (synced) => set({ isSynced: synced }),
+
       // Archived Projects defaults
       isArchivedProjectsOpen: false,
       setArchivedProjectsOpen: (open) => set({ isArchivedProjectsOpen: open }),
@@ -119,6 +138,8 @@ export const useUiStore = create<UiState>()(
       lastDismissedVersion: "",
       setLastDismissedVersion: (version) =>
         set({ lastDismissedVersion: version }),
+      hasChangelogUpdate: false,
+      setHasChangelogUpdate: (has) => set({ hasChangelogUpdate: has }),
 
       // Hydration
       _hasHydrated: false,
@@ -133,12 +154,18 @@ export const useUiStore = create<UiState>()(
         }
       },
       partialize: (state) => {
-        // Exclude environment and hydration state from persistence
+        // Exclude environment, hydration, and ephemeral runtime state from persistence
         const {
           isDesktop: _isDesktop,
           setIsDesktop: _setIsDesktop,
           _hasHydrated: _hasHydrated,
           setHasHydrated: _setHasHydrated,
+          isFullscreen: _isFullscreen,
+          setIsFullscreen: _setIsFullscreen,
+          isSynced: _isSynced,
+          setIsSynced: _setIsSynced,
+          hasChangelogUpdate: _hasChangelogUpdate,
+          setHasChangelogUpdate: _setHasChangelogUpdate,
           ...rest
         } = state;
         return rest;

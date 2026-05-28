@@ -157,7 +157,7 @@ describe("IntegratedTaskKanbanBoard", () => {
           projectsMap={new Map()}
           isDesktop={true}
           triggerHaptic={vi.fn()}
-          startTimer={vi.fn()}
+          setActiveTaskId={vi.fn()}
         />
       </TooltipProvider>,
     );
@@ -191,7 +191,7 @@ describe("IntegratedTaskKanbanBoard", () => {
           projectsMap={new Map()}
           isDesktop={true}
           triggerHaptic={vi.fn()}
-          startTimer={vi.fn()}
+          setActiveTaskId={vi.fn()}
         />
       </TooltipProvider>,
     );
@@ -207,7 +207,7 @@ describe("IntegratedTaskKanbanBoard", () => {
           projectsMap={new Map()}
           isDesktop={true}
           triggerHaptic={vi.fn()}
-          startTimer={vi.fn()}
+          setActiveTaskId={vi.fn()}
         />
       </TooltipProvider>,
     );
@@ -226,7 +226,7 @@ describe("IntegratedTaskKanbanBoard", () => {
           projectsMap={new Map()}
           isDesktop={true}
           triggerHaptic={vi.fn()}
-          startTimer={vi.fn()}
+          setActiveTaskId={vi.fn()}
         />
       </TooltipProvider>,
     );

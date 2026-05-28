@@ -173,7 +173,7 @@ describe("Mobile Scrolling Padding", () => {
       projectsMap: new Map(),
       isDesktop: false,
       triggerHaptic: vi.fn(),
-      startTimer: vi.fn(),
+      setActiveTaskId: vi.fn(),
     };
 
     const { container: _container } = render(
@@ -191,7 +191,7 @@ describe("Mobile Scrolling Padding", () => {
       projectsMap: new Map(),
       isDesktop: false,
       triggerHaptic: vi.fn(),
-      startTimer: vi.fn(),
+      setActiveTaskId: vi.fn(),
     };
 
     const { container: _container } = render(
@@ -210,7 +210,7 @@ describe("Mobile Scrolling Padding", () => {
       projectsMap: new Map(),
       isDesktop: false,
       triggerHaptic: vi.fn(),
-      startTimer: vi.fn(),
+      setActiveTaskId: vi.fn(),
     };
 
     const { container: _container } = render(

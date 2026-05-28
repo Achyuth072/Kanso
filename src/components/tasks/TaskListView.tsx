@@ -82,7 +82,7 @@ interface TaskListViewProps {
   projectsMap: Map<string, Project>;
   isDesktop: boolean;
   triggerHaptic: (signature?: "tick" | "toggle" | "thud" | "success") => void;
-  startTimer: (taskId: string) => void;
+  setActiveTaskId: (taskId: string) => void;
 }
 
 /**
@@ -100,7 +100,7 @@ export function TaskListView({
   projectsMap,
   isDesktop,
   triggerHaptic,
-  startTimer,
+  setActiveTaskId,
 }: TaskListViewProps) {
   const { completed } = processedTasks;
   const groups = groupTasks;
@@ -145,7 +145,7 @@ export function TaskListView({
                         project={project}
                         isDesktop={isDesktop}
                         triggerHaptic={triggerHaptic}
-                        startTimer={startTimer}
+                        setActiveTaskId={setActiveTaskId}
                       />
                     );
                   })}
@@ -179,7 +179,7 @@ export function TaskListView({
                       project={project}
                       isDesktop={isDesktop}
                       triggerHaptic={triggerHaptic}
-                      startTimer={startTimer}
+                      setActiveTaskId={setActiveTaskId}
                     />
                   );
                 })}
@@ -223,7 +223,7 @@ export function TaskListView({
                       project={project}
                       isDesktop={isDesktop}
                       triggerHaptic={triggerHaptic}
-                      startTimer={startTimer}
+                      setActiveTaskId={setActiveTaskId}
                     />
                   );
                 })}
@@ -261,7 +261,7 @@ export function TaskListView({
                   project={project}
                   isDesktop={isDesktop}
                   triggerHaptic={triggerHaptic}
-                  startTimer={startTimer}
+                  setActiveTaskId={setActiveTaskId}
                 />
               );
             })}

@@ -29,6 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTimer } from "@/components/TimerProvider";
 import { useBackNavigation } from "@/lib/hooks/useBackNavigation";
 
@@ -61,6 +62,7 @@ function SettingsForm() {
   const sessions = useWatch({ control, name: "sessionsBeforeLongBreak" });
   const autoStartBreak = useWatch({ control, name: "autoStartBreak" });
   const autoStartFocus = useWatch({ control, name: "autoStartFocus" });
+  const taskSwitchBehavior = useWatch({ control, name: "taskSwitchBehavior" });
 
   return (
     <div className="space-y-6 py-4">
@@ -279,6 +281,70 @@ function SettingsForm() {
           />
         </div>
       </div>
+
+      {/* Session Section — Task Switch Behavior */}
+      <div className="space-y-3 pt-2 border-t">
+        <div className="space-y-0.5">
+          <Label className="text-sm font-medium">On task switch</Label>
+          <p className="text-xs text-muted-foreground">
+            What happens when you change tasks during a session
+          </p>
+        </div>
+        <Tabs
+          value={
+            taskSwitchBehavior === "keepRunning"
+              ? "keep"
+              : taskSwitchBehavior === "pauseOnSwitch"
+                ? "pause"
+                : "reset"
+          }
+          onValueChange={(v) => {
+            if (v) {
+              const mapped =
+                v === "keep"
+                  ? "keepRunning"
+                  : v === "pause"
+                    ? "pauseOnSwitch"
+                    : "resetOnSwitch";
+              setValue("taskSwitchBehavior", mapped, { shouldValidate: true });
+            }
+          }}
+          className="w-full"
+        >
+          <TabsList className="grid grid-cols-3 w-full bg-secondary/10 p-1 rounded-lg h-9 border border-border/40 shadow-none">
+            <TabsTrigger
+              value="keep"
+              className={cn(
+                "rounded-md text-[12px] font-medium tracking-tight h-7 px-2",
+                "data-[state=active]:bg-brand data-[state=active]:text-brand-foreground data-[state=active]:shadow-none transition-seijaku-fast",
+                "border border-transparent data-[state=active]:border-brand/20 text-muted-foreground hover:text-foreground hover:bg-secondary/40",
+              )}
+            >
+              Keep
+            </TabsTrigger>
+            <TabsTrigger
+              value="pause"
+              className={cn(
+                "rounded-md text-[12px] font-medium tracking-tight h-7 px-2",
+                "data-[state=active]:bg-brand data-[state=active]:text-brand-foreground data-[state=active]:shadow-none transition-seijaku-fast",
+                "border border-transparent data-[state=active]:border-brand/20 text-muted-foreground hover:text-foreground hover:bg-secondary/40",
+              )}
+            >
+              Pause
+            </TabsTrigger>
+            <TabsTrigger
+              value="reset"
+              className={cn(
+                "rounded-md text-[12px] font-medium tracking-tight h-7 px-2",
+                "data-[state=active]:bg-brand data-[state=active]:text-brand-foreground data-[state=active]:shadow-none transition-seijaku-fast",
+                "border border-transparent data-[state=active]:border-brand/20 text-muted-foreground hover:text-foreground hover:bg-secondary/40",
+              )}
+            >
+              Reset
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
     </div>
   );
 }
@@ -299,6 +365,7 @@ export function FocusSettingsDialog() {
       sessionsBeforeLongBreak: settings.sessionsBeforeLongBreak,
       autoStartBreak: settings.autoStartBreak,
       autoStartFocus: settings.autoStartFocus,
+      taskSwitchBehavior: settings.taskSwitchBehavior,
     },
   });
 
@@ -410,7 +477,7 @@ export function FocusSettingsDialog() {
             Customize your focus and break durations
           </DrawerDescription>
         </DrawerHeader>
-        <div className="px-4 overflow-y-auto flex-1">
+        <div className="px-4 overflow-y-auto flex-1 scrollbar-hide">
           <FormProvider {...methods}>
             <SettingsForm />
           </FormProvider>

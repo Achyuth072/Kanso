@@ -38,7 +38,7 @@ interface TaskItemProps {
   project?: { color: string; name: string };
   isDesktop?: boolean;
   triggerHaptic?: (signature?: "tick" | "toggle" | "thud" | "success") => void;
-  startTimer?: (taskId: string) => void;
+  setActiveTaskId?: (taskId: string) => void;
 }
 
 function TaskItemBase({
@@ -54,7 +54,7 @@ function TaskItemBase({
   project,
   isDesktop = false,
   triggerHaptic,
-  startTimer,
+  setActiveTaskId,
 }: TaskItemProps) {
   const [_isChecking, setIsChecking] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -71,7 +71,7 @@ function TaskItemBase({
   const handlePlayFocus = (e: React.MouseEvent) => {
     e.stopPropagation();
     triggerHaptic?.("thud");
-    startTimer?.(task.id);
+    setActiveTaskId?.(task.id);
     router.push("/focus");
   };
 
@@ -142,7 +142,7 @@ function TaskItemBase({
           onSelect={onSelect}
           isDesktop={isDesktop}
           triggerHaptic={triggerHaptic}
-          startTimer={startTimer}
+          setActiveTaskId={setActiveTaskId}
           shouldAnimate={shouldAnimate}
         />
       ) : isDesktop ? (

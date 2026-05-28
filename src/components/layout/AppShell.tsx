@@ -40,7 +40,6 @@ import {
   invalidateChangelogCache,
   isNewerThan,
 } from "@/lib/changelog-cache";
-import { Sparkles } from "lucide-react";
 import { useCalendarStore } from "@/lib/calendar/store";
 import { useWeeklyBackup } from "@/lib/hooks/useWeeklyBackup";
 import { GlobalFabs } from "@/components/layout/GlobalFabs";
@@ -110,7 +109,7 @@ interface AppShellProps {
   children: React.ReactNode;
 }
 
-// Watches app version and shows changelog on update
+// Watches app version, syncs hasChangelogUpdate to store, renders the popup
 function ChangelogPopupWatcher() {
   const lastDismissedVersion = useUiStore(
     (state) => state.lastDismissedVersion,
@@ -120,6 +119,9 @@ function ChangelogPopupWatcher() {
   );
   const isChangelogOpen = useUiStore((state) => state.isChangelogOpen);
   const setChangelogOpen = useUiStore((state) => state.setChangelogOpen);
+  const setHasChangelogUpdate = useUiStore(
+    (state) => state.setHasChangelogUpdate,
+  );
   const [serverVersion, setServerVersion] = useState<string | null>(null);
 
   useEffect(() => {
@@ -159,36 +161,22 @@ function ChangelogPopupWatcher() {
   const effectiveVersion = serverVersion || APP_VERSION;
   const hasNewVersion = isNewerThan(effectiveVersion, lastDismissedVersion);
 
-  return (
-    <>
-      {hasNewVersion && (
-        <button
-          type="button"
-          onClick={() => {
-            invalidateChangelogCache();
-            setChangelogOpen(true);
-          }}
-          className="hidden md:flex fixed bottom-20 left-4 z-40 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-foreground/70 hover:bg-sidebar transition-seijaku-fast"
-          aria-label="What's New — new version available"
-        >
-          <Sparkles className="h-4 w-4 shrink-0" strokeWidth={2.25} />
-          <span>What&apos;s New</span>
-          <span className="h-1.5 w-1.5 rounded-full bg-brand animate-pulse" />
-        </button>
-      )}
+  useEffect(() => {
+    setHasChangelogUpdate(hasNewVersion);
+  }, [hasNewVersion, setHasChangelogUpdate]);
 
-      <ChangelogPopup
-        open={isChangelogOpen}
-        appVersion={APP_VERSION}
-        forceVersion={serverVersion || undefined}
-        onOpenChange={(val) => {
-          if (!val) {
-            setChangelogOpen(false);
-            setLastDismissedVersion(effectiveVersion);
-          }
-        }}
-      />
-    </>
+  return (
+    <ChangelogPopup
+      open={isChangelogOpen}
+      appVersion={APP_VERSION}
+      forceVersion={serverVersion || undefined}
+      onOpenChange={(val) => {
+        if (!val) {
+          setChangelogOpen(false);
+          setLastDismissedVersion(effectiveVersion);
+        }
+      }}
+    />
   );
 }
 
@@ -312,6 +300,7 @@ function AppShellContent({ children }: AppShellProps) {
         <GlobalHotkeys
           setCommandOpen={setCommandOpen}
           setHelpOpen={setShortcutsHelpOpen}
+          commandOpen={commandOpen}
         />
         {/* Mobile Top Bar - hidden on Focus and Settings pages */}
         {!hideMobileNav && <Header />}

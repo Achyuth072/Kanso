@@ -3,6 +3,7 @@
 import { Toaster as SonnerToaster } from "sonner";
 import { Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { useUiStore } from "@/lib/store/uiStore";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -11,16 +12,22 @@ const inter = Inter({
 });
 
 export function Toaster() {
+  const isChangelogOpen = useUiStore((state) => state.isChangelogOpen);
   return (
     <SonnerToaster
       position="bottom-center"
       expand={true}
-      duration={4000}
-      style={{ zIndex: 50 }}
+      duration={isChangelogOpen ? Infinity : 4000}
+      style={{ zIndex: 70 }}
       mobileOffset={{ left: 16, right: 16, bottom: 16 }}
       swipeDirections={["bottom"]}
       toastOptions={{
         unstyled: true,
+        style: {
+          // max-content (not fit-content): fit-content shrinks to min-content (longest word) inside Sonner's absolute-positioned <li>, causing mid-word wrap on short messages. max-content sizes to the natural one-line width; existing maxWidth caps long messages.
+          width: "max-content",
+          maxWidth: "min(24rem, calc(100vw - 2rem))",
+        },
         classNames: {
           toast: cn(
             inter.variable,
@@ -28,7 +35,7 @@ export function Toaster() {
             "bg-card/98 backdrop-blur-md border border-border/80 text-foreground",
             "rounded-md shadow-sm inline-flex items-center gap-3",
             "py-2.5 px-4 sm:py-3 sm:px-5",
-            "w-fit max-w-sm min-w-[280px]",
+            "w-fit max-w-sm",
             "mb-[calc(76px+env(safe-area-inset-bottom))] md:mb-5",
             "transition-all duration-300 ease-seijaku",
             "[&_[data-icon]]:text-foreground/60",

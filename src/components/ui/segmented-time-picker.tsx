@@ -228,21 +228,13 @@ export function SegmentedTimePicker({
         <div className="flex items-center gap-0.5">
           {/* Hours Segment */}
           <div className="relative group">
-            <button
-              type="button"
-              onFocus={() => handleFocus("h")}
-              onBlur={() => setActiveSegment(null)}
-              onKeyDown={(e) => handleKeyDown(e, "h")}
-              onWheel={(e) => handleWheel(e, "h")}
-              onPointerDown={handlePointerDown}
-              onPointerUp={(e) => handlePointerUp(e, "h")}
-              data-vaul-no-drag
-              aria-label="Adjust Hours"
+            {/* Visible display — pointer-events-none so the input overlay receives all interactions */}
+            <div
               className={cn(
-                "relative px-3 md:px-4 py-2 rounded-lg transition-all duration-300 outline-none border-2 touch-none",
+                "relative px-3 md:px-4 py-2 rounded-lg transition-all duration-300 border-2 touch-none pointer-events-none select-none",
                 activeSegment === "h"
                   ? "text-foreground bg-brand/10 border-brand/40 shadow-[0_0_15px_rgba(var(--brand-rgb),0.2)]"
-                  : "text-foreground/80 hover:text-foreground border-transparent focus-visible:bg-brand/10 focus-visible:border-brand/40",
+                  : "text-foreground/80 border-transparent",
               )}
             >
               <motion.span
@@ -254,7 +246,28 @@ export function SegmentedTimePicker({
               >
                 {(is24hr ? hours : h12).toString().padStart(2, "0")}
               </motion.span>
-            </button>
+            </div>
+            {/* Transparent input — receives focus and summons Android keyboard via inputMode */}
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer rounded-lg focus:outline-none"
+              aria-label="Adjust Hours"
+              data-vaul-no-drag
+              onFocus={() => handleFocus("h")}
+              onBlur={() => setActiveSegment(null)}
+              onKeyDown={(e) => handleKeyDown(e, "h")}
+              onWheelCapture={(e) => handleWheel(e, "h")}
+              onPointerDown={handlePointerDown}
+              onPointerUp={(e) => handlePointerUp(e, "h")}
+              onChange={(e) => {
+                // Catches Android IME input when onKeyDown key is "Unidentified"
+                const digit = e.target.value.replace(/\D/g, "").slice(-1);
+                if (digit) handleInputChange("h", digit);
+                e.currentTarget.value = "";
+              }}
+            />
           </div>
 
           <span className="text-2xl md:text-3xl text-foreground/20 font-thin self-center translate-y-[-1px]">
@@ -263,21 +276,13 @@ export function SegmentedTimePicker({
 
           {/* Minutes Segment */}
           <div className="relative group">
-            <button
-              type="button"
-              onFocus={() => handleFocus("m")}
-              onBlur={() => setActiveSegment(null)}
-              onKeyDown={(e) => handleKeyDown(e, "m")}
-              onWheel={(e) => handleWheel(e, "m")}
-              onPointerDown={handlePointerDown}
-              onPointerUp={(e) => handlePointerUp(e, "m")}
-              data-vaul-no-drag
-              aria-label="Adjust Minutes"
+            {/* Visible display */}
+            <div
               className={cn(
-                "relative px-3 md:px-4 py-2 rounded-lg transition-all duration-300 outline-none border-2 touch-none",
+                "relative px-3 md:px-4 py-2 rounded-lg transition-all duration-300 border-2 touch-none pointer-events-none select-none",
                 activeSegment === "m"
                   ? "text-foreground bg-brand/10 border-brand/40 shadow-[0_0_15px_rgba(var(--brand-rgb),0.2)]"
-                  : "text-foreground/80 hover:text-foreground border-transparent focus-visible:bg-brand/10 focus-visible:border-brand/40",
+                  : "text-foreground/80 border-transparent",
               )}
             >
               <motion.span
@@ -289,7 +294,27 @@ export function SegmentedTimePicker({
               >
                 {minutes.toString().padStart(2, "0")}
               </motion.span>
-            </button>
+            </div>
+            {/* Transparent input */}
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer rounded-lg focus:outline-none"
+              aria-label="Adjust Minutes"
+              data-vaul-no-drag
+              onFocus={() => handleFocus("m")}
+              onBlur={() => setActiveSegment(null)}
+              onKeyDown={(e) => handleKeyDown(e, "m")}
+              onWheelCapture={(e) => handleWheel(e, "m")}
+              onPointerDown={handlePointerDown}
+              onPointerUp={(e) => handlePointerUp(e, "m")}
+              onChange={(e) => {
+                const digit = e.target.value.replace(/\D/g, "").slice(-1);
+                if (digit) handleInputChange("m", digit);
+                e.currentTarget.value = "";
+              }}
+            />
           </div>
         </div>
 

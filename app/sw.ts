@@ -174,3 +174,74 @@ self.addEventListener("notificationclick", (event) => {
     })(),
   );
 });
+
+// Handle push subscription changes (Chrome Android auto-rotates subscriptions)
+// When the subscription changes, re-subscribe and sync the new endpoint to the server
+self.addEventListener("pushsubscriptionchange", (event) => {
+  console.log("[SW] Push subscription change detected");
+
+  event.waitUntil(
+    (async () => {
+      try {
+        // Check for existing subscription and unsubscribe from old endpoint
+        const existingSubscription =
+          await self.registration.pushManager.getSubscription();
+        if (existingSubscription) {
+          console.log("[SW] Unsubscribing from old push subscription");
+          await existingSubscription.unsubscribe();
+        }
+
+        // Get VAPID key — NEXT_PUBLIC_ variables are replaced at build time
+        // by Next.js so process.env becomes a string literal in the compiled output
+        const vapidKey =
+          typeof process !== "undefined" &&
+          process.env?.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+            ? process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+            : "";
+        if (!vapidKey) {
+          console.warn(
+            "[SW] VAPID public key not available, cannot re-subscribe to push",
+          );
+          return;
+        }
+
+        // Subscribe with a fresh endpoint
+        const newSubscription = await self.registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidKey) as BufferSource,
+        });
+
+        // Post new subscription to backend
+        const response = await fetch("/api/push/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subscription: newSubscription }),
+        });
+
+        if (!response.ok) {
+          console.error(
+            "[SW] Failed to sync new subscription:",
+            await response.text(),
+          );
+          return;
+        }
+
+        console.log("[SW] Push subscription re-synced successfully");
+      } catch (err) {
+        console.error("[SW] Failed to re-sync push subscription:", err);
+      }
+    })(),
+  );
+});
+
+// Helper: Convert base64-encoded VAPID key to Uint8Array for pushManager.subscribe()
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}

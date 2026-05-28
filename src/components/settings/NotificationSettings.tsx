@@ -25,6 +25,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useState, useMemo } from "react";
 
 const getInitialTimezones = () => {
@@ -221,49 +226,66 @@ export function NotificationSettings() {
     <div className="space-y-6">
       {/* 1. Master Toggle */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-background">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-full bg-secondary/30">
-              <Bell className="h-4 w-4 text-muted-foreground" />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-background">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-secondary/30">
+                  <Bell className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Push Notifications</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isGuestMode
+                      ? "Sign in to enable notifications"
+                      : permission === "granted"
+                        ? "Receive updates and reminders"
+                        : "Enable to receive updates"}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={
+                  !isGuestMode &&
+                  notificationsEnabled &&
+                  permission === "granted"
+                }
+                onCheckedChange={handleTogglePush}
+                disabled={isGuestMode || permission === "denied" || isSyncing}
+                aria-label="Push Notifications"
+              />
             </div>
-            <div>
-              <p className="text-sm font-medium">Push Notifications</p>
-              <p className="text-xs text-muted-foreground">
-                {permission === "granted"
-                  ? "Receive updates and reminders"
-                  : "Enable to receive updates"}
-              </p>
+          </TooltipTrigger>
+          {isGuestMode && (
+            <TooltipContent className="hidden md:block">
+              Available for registered users only
+            </TooltipContent>
+          )}
+        </Tooltip>
+        {!isGuestMode &&
+          permission === "granted" &&
+          notificationsEnabled &&
+          !isSyncing && (
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={handleTestNotification}
+              >
+                <Bell className="h-4 w-4 mr-2" />
+                Send Test Notification (Server)
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-[10px] text-muted-foreground hover:text-foreground h-7"
+                onClick={handleLocalTestNotification}
+              >
+                Trigger Local Notification (Sanity Check)
+              </Button>
             </div>
-          </div>
-          <Switch
-            checked={notificationsEnabled && permission === "granted"}
-            onCheckedChange={handleTogglePush}
-            disabled={permission === "denied" || isSyncing}
-            aria-label="Push Notifications"
-          />
-        </div>
-
-        {permission === "granted" && notificationsEnabled && !isSyncing && (
-          <div className="flex flex-col gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={handleTestNotification}
-            >
-              <Bell className="h-4 w-4 mr-2" />
-              Send Test Notification (Server)
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full text-[10px] text-muted-foreground hover:text-foreground h-7"
-              onClick={handleLocalTestNotification}
-            >
-              Trigger Local Notification (Sanity Check)
-            </Button>
-          </div>
-        )}
+          )}
       </div>
 
       {/* 2. Timezone Selection */}
@@ -380,12 +402,6 @@ export function NotificationSettings() {
             />
           </div>
         </div>
-      )}
-
-      {isGuestMode && permission === "granted" && (
-        <p className="text-xs text-center text-muted-foreground px-2">
-          Morning briefings and server-side alerts require a synced account.
-        </p>
       )}
     </div>
   );

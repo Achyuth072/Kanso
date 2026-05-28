@@ -13,7 +13,7 @@ export function LoaderOverlay({
   return (
     <div
       className={cn(
-        "fixed inset-0 bg-background/80 backdrop-blur-sm z-50",
+        "fixed inset-0 bg-background/80 backdrop-blur-sm z-70",
         "flex flex-col items-center justify-center gap-4",
         className,
       )}

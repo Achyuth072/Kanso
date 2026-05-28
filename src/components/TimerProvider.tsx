@@ -13,6 +13,7 @@ interface TimerContextValue {
   start: (taskId?: string) => void;
   pause: () => void;
   stop: () => void;
+  cancel: () => void;
   skip: () => void;
   updateSettings: (newSettings: Partial<TimerSettings>) => void;
 }
@@ -40,6 +41,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       start: timer.start,
       pause: timer.pause,
       stop: timer.stop,
+      cancel: timer.cancel,
       skip: timer.skip,
       updateSettings: timer.updateSettings,
     }),
@@ -50,6 +52,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       timer.start,
       timer.pause,
       timer.stop,
+      timer.cancel,
       timer.skip,
       timer.updateSettings,
     ],

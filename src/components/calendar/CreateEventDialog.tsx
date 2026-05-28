@@ -270,7 +270,7 @@ export function CreateEventDialog({
       <ResponsiveDialogContent className="sm:max-w-[425px] p-0 overflow-hidden">
         <form
           onSubmit={handleSubmit(onFormSubmit) as any}
-          className="flex flex-col h-auto max-h-[90dvh]"
+          className="flex flex-col h-auto max-h-[85dvh]"
         >
           <ResponsiveDialogHeader className="px-4 pt-6 shrink-0">
             <ResponsiveDialogTitle className="type-h2">
@@ -338,12 +338,21 @@ export function CreateEventDialog({
                       : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent
+                  className="w-auto p-0 overflow-hidden"
+                  align="start"
+                  collisionPadding={16}
+                  style={{
+                    maxHeight:
+                      "min(380px, var(--radix-popover-content-available-height, 80dvh))",
+                  }}
+                >
                   <DateTimeWizard
                     date={safeStartDate}
                     setDate={setStartDate}
                     onClose={() => setShowStartPicker(false)}
                     showTime={!allDay}
+                    compact
                   />
                 </PopoverContent>
               </Popover>
@@ -368,12 +377,21 @@ export function CreateEventDialog({
                       : "Pick an end time"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent
+                  className="w-auto p-0 overflow-hidden"
+                  align="start"
+                  collisionPadding={16}
+                  style={{
+                    maxHeight:
+                      "min(380px, var(--radix-popover-content-available-height, 80dvh))",
+                  }}
+                >
                   <DateTimeWizard
                     date={safeEndDate}
                     setDate={setEndDate}
                     onClose={() => setShowEndPicker(false)}
                     showTime={!allDay}
+                    compact
                   />
                 </PopoverContent>
               </Popover>
