@@ -1,5 +1,16 @@
 [
   {
+    "version": "1.21.0",
+    "date": "2026-05-28",
+    "commits": [
+      {
+        "hash": "7c70e63",
+        "heading": "Real-time Focus Orchestration, Calendar improvements and minor fixes",
+        "body": "- Cross-device timer sync via Postgres replication (postgres_changes)\n- FocusTaskPicker with per-project grouping, overdue/today tabs, guest mode\n- FullscreenToggle with reactive PiP close on fullscreen\n- Cancel session with rollback for abandoned sessions\n- Push notification re-validation on SW change and visibility change\n- FocusSettingsDialog polish: harmonized sections, ink & matte tokens\n- Calendar: centered now-indicator, mobile gesture fix, week view gated to desktop\n- Toast: content-driven width, mobile centering, removed overrides\n- Sidebar: centered collapsed icon backgrounds\n- Overlay z-index fixes (portaled overlays bumped to z-70)\n- Android keyboard fix for time picker\n- Guest mode: push toggle disabled, backend sync blocked"
+      }
+    ]
+  },
+  {
     "version": "1.20.1",
     "date": "2026-05-20",
     "commits": [

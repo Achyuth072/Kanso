@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.21.0 — May 2026
+
+- **Real-time Focus Orchestration** — cross-device timer sync via Postgres replication, Picture-in-Picture integration with fullscreen awareness, and a per-project FocusTaskPicker with overdue/today grouping
+- **FocusTimer sync** — timer state persists across devices with `postgres_changes` subscription and automatic conflict resolution
+- **Fullscreen toggle** — dedicated FullscreenToggle component with reactive PiP close
+- **Cancel session with rollback** — abandoned sessions no longer log partial history
+- **Push notification re-validation** — subscriptions re-validate on service worker and visibility changes
+- **FocusSettingsDialog polish** — harmonized sections, differentiated PiP/fullscreen buttons, ink & matte tokens
+- **Calendar improvements** — centered now-indicator, mobile gesture conflict resolved, week view gated to desktop
+- **Toast improvements** — content-driven width, mobile centering, removed unnecessary overrides
+- **Sidebar** — centered collapsed icon backgrounds reliably
+- **Overlay z-index fixes** — portaled overlays bumped to z-70
+- **Android keyboard fix** — time picker no longer breaks on mobile keyboard open
+- **Guest mode** — push toggle disabled with backend sync blocked for guest accounts
+- **Changelog & hotkey UX** — toasts suppressed while changelog open, hotkeys blocked behind modals, "What's New" moved to sidebar
+
 ## v1.20.1 — May 2026
 
 - Changelog popup: see what changed since your last visit, version-aware
