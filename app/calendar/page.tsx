@@ -33,7 +33,7 @@ export default function CalendarPage() {
 
   // Adjust view if mobile/desktop changes
   useEffect(() => {
-    if (isMobile && view === "4day") {
+    if (isMobile && (view === "4day" || view === "week")) {
       setView("3day");
     } else if (!isMobile && view === "3day") {
       setView("4day");
@@ -79,7 +79,6 @@ export default function CalendarPage() {
       case "day":
         return (
           <TimeGrid
-            isMobile={isMobile}
             startDate={currentDate}
             daysToShow={1}
             events={events}
@@ -91,7 +90,6 @@ export default function CalendarPage() {
       case "3day":
         return (
           <TimeGrid
-            isMobile={isMobile}
             startDate={currentDate}
             daysToShow={3}
             events={events}
@@ -103,7 +101,6 @@ export default function CalendarPage() {
       case "4day":
         return (
           <TimeGrid
-            isMobile={isMobile}
             startDate={currentDate}
             daysToShow={4}
             events={events}
@@ -115,7 +112,6 @@ export default function CalendarPage() {
       case "week":
         return (
           <TimeGrid
-            isMobile={isMobile}
             startDate={startOfWeek(currentDate)}
             daysToShow={7}
             events={events}

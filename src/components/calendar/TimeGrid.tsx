@@ -1,7 +1,7 @@
 "use client";
 
 import { format, isSameDay } from "date-fns";
-import { useMemo, memo, useEffect, useRef } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import { useSwipe } from "@/lib/hooks/useSwipe";
 import { useCalendarStore } from "@/lib/calendar/store";
 import { useTimeFormat } from "@/lib/hooks/useTimeFormat";
@@ -13,7 +13,6 @@ import { CurrentTimeIndicator } from "./CurrentTimeIndicator";
 const HOUR_HEIGHT = 120; // 60 minutes * 2 pixels
 
 interface TimeGridProps {
-  isMobile?: boolean;
   startDate: Date;
   daysToShow: number; // 1 for Day, 3 for Mobile, 4 for Desktop, 7 for Week
   events: CalendarEvent[];
@@ -24,7 +23,6 @@ interface TimeGridProps {
 }
 
 export function TimeGrid({
-  isMobile = false,
   startDate,
   daysToShow,
   events,
@@ -46,15 +44,7 @@ export function TimeGrid({
   const columns = useMemo(() => layoutDayRange(events, dates), [events, dates]);
   const hours = Array.from({ length: 24 }).map((_, i) => i);
 
-  // Responsive column sizing logic
-  const gridTemplateColumns = useMemo(() => {
-    // On mobile, if showing more than 3 days (Week view),
-    // force each column to 33.33% to show 3 days at a time with scroll
-    if (isMobile && daysToShow > 3) {
-      return `repeat(${daysToShow}, 33.3333%)`;
-    }
-    return `repeat(${daysToShow}, 1fr)`;
-  }, [isMobile, daysToShow]);
+  const gridTemplateColumns = `repeat(${daysToShow}, 1fr)`;
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -64,35 +54,23 @@ export function TimeGrid({
       const now = new Date();
       const currentHour = now.getHours();
       const currentMinute = now.getMinutes();
-
-      // Vertical scroll position
       const scrollPos =
         currentHour * HOUR_HEIGHT + (currentMinute / 60) * HOUR_HEIGHT;
       scrollRef.current.scrollTop = Math.max(0, scrollPos - 120);
-
-      // Horizontal scroll (Mobile Week View)
-      if (isMobile && daysToShow > 3) {
-        const todayIndex = dates.findIndex((d) => isSameDay(d, now));
-        if (todayIndex > 0) {
-          const containerWidth = scrollRef.current.clientWidth;
-          // Each column is 33.3333% of the container width
-          const columnWidth = containerWidth / 3;
-          scrollRef.current.scrollLeft = todayIndex * columnWidth;
-        }
-      }
     }
-  }, [dates, isMobile, daysToShow]);
+  }, []);
 
   return (
     <div
-      ref={scrollRef}
       {...swipeHandlers}
       data-testid={testId || "time-grid"}
+      className={cn("h-full flex flex-col", className)}
+    >
+    <div
+      ref={scrollRef}
       className={cn(
-        "flex h-full overflow-auto bg-background custom-scrollbar",
-        "scroll-pl-12 md:scroll-pl-16",
-        isMobile && "snap-x snap-mandatory",
-        className,
+        "flex flex-1 min-h-0 overflow-auto bg-background custom-scrollbar",
+        "touch-pan-y overscroll-contain",
       )}
     >
       {/* Time Labels Column */}
@@ -123,7 +101,6 @@ export function TimeGrid({
               key={column.date.toString()}
               className={cn(
                 "relative min-w-0 md:min-w-[120px]",
-                isMobile && "snap-start",
                 isToday && "bg-brand/[0.09]",
               )}
             >
@@ -239,6 +216,7 @@ export function TimeGrid({
           );
         })}
       </div>
+    </div>
     </div>
   );
 }
