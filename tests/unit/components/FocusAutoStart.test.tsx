@@ -49,14 +49,20 @@ vi.mock("framer-motion", async () => {
   const React = await import("react");
   return {
     motion: {
-      div: React.forwardRef(
-        ({ children, ...props }: any, ref: any) => {
-          return <div {...props} ref={ref}>{children}</div>;
-        },
-      ),
+      div: React.forwardRef(({ children, ...props }: any, ref: any) => {
+        return (
+          <div {...props} ref={ref}>
+            {children}
+          </div>
+        );
+      }),
       button: React.forwardRef(
         ({ children, onClick, ...props }: any, ref: any) => {
-          return <button ref={ref} onClick={onClick} {...props}>{children}</button>;
+          return (
+            <button ref={ref} onClick={onClick} {...props}>
+              {children}
+            </button>
+          );
         },
       ),
     },
@@ -76,13 +82,22 @@ vi.mock("@/components/tasks/task-utils", () => ({
 
 vi.mock("@/components/kanban", () => ({
   KanbanBoardCardButton: ({ children, onClick, className, ...props }: any) => (
-    <button onClick={onClick} className={className} {...props}>{children}</button>
+    <button onClick={onClick} className={className} {...props}>
+      {children}
+    </button>
   ),
 }));
 
 vi.mock("@/components/ui/checkbox", () => ({
   Checkbox: ({ checked, className, ...props }: any) => (
-    <input type="checkbox" checked={checked} readOnly className={className} data-testid="checkbox" {...props} />
+    <input
+      type="checkbox"
+      checked={checked}
+      readOnly
+      className={className}
+      data-testid="checkbox"
+      {...props}
+    />
   ),
 }));
 

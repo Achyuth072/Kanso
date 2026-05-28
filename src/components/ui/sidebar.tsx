@@ -36,7 +36,8 @@ const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 const SIDEBAR_COLLAPSE = {
   hideContent: "group-data-[collapsible=icon]:hidden",
   hideLabelSpan: "group-data-[collapsible=icon]:[&>span:last-child]:hidden",
-  iconButton: "group-data-[collapsible=icon]:!size-9 group-data-[collapsible=icon]:!p-2 group-data-[collapsible=icon]:gap-0",
+  iconButton:
+    "group-data-[collapsible=icon]:!size-9 group-data-[collapsible=icon]:!p-2 group-data-[collapsible=icon]:gap-0",
 } as const;
 
 type SidebarContextProps = {

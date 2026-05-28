@@ -24,9 +24,7 @@ import { cn } from "@/lib/utils";
 function SyncIndicatorInner() {
   const isSynced = useUiStore((state) => state.isSynced);
   const { isGuestMode } = useAuth();
-  const { isRunning, remainingSeconds } = useTimerStore(
-    (state) => state.state,
-  );
+  const { isRunning, remainingSeconds } = useTimerStore((state) => state.state);
   const totalSeconds = useTimerStore((state) => {
     const settings = state.settings;
     const mode = state.state.mode;

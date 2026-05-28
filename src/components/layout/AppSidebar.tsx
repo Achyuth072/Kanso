@@ -121,7 +121,12 @@ export function AppSidebar() {
               K
             </div>
             {/* Label + trigger hidden when collapsed (matching nav item pattern) */}
-            <div className={cn("flex items-center justify-between ml-2 flex-1", SIDEBAR_COLLAPSE.hideContent)}>
+            <div
+              className={cn(
+                "flex items-center justify-between ml-2 flex-1",
+                SIDEBAR_COLLAPSE.hideContent,
+              )}
+            >
               <span className="type-h2 whitespace-nowrap">Kanso</span>
               <SidebarTrigger className="h-9 w-9 shrink-0 active:scale-95 transition-all [&_svg]:stroke-[2.25px]" />
             </div>

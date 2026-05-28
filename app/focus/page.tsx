@@ -21,7 +21,7 @@ import { usePiP } from "@/components/providers/PiPProvider";
 import { useFullscreen } from "@/lib/hooks/useFullscreen";
 import { Minimize2, Target, PictureInPicture2 } from "lucide-react";
 import { useFocusHistoryStore } from "@/lib/store/focusHistoryStore";
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useRef } from "react";
 
 const MODE_LABELS: Record<TimerMode, string> = {
   focus: "Focus",
@@ -39,11 +39,11 @@ function formatTime(seconds: number): string {
 
 export default function FocusPage() {
   const router = useRouter();
-  const { state, settings, start, pause, stop, skip, cancel } = useTimer();
+  const { state, settings, start, pause, stop, skip } = useTimer();
   const supabase = createClient();
   const { trigger, isPhone } = useHaptic();
   const { isPiPSupported, isPiPActive, openPiP, closePiP } = usePiP();
-  const { isFullscreen, enterFullscreen, exitFullscreen } = useFullscreen();
+  const { isFullscreen } = useFullscreen();
   const { sessions } = useFocusHistoryStore();
   const todaySessionsCount = useMemo(() => {
     const today = new Date().toDateString();
@@ -53,16 +53,17 @@ export default function FocusPage() {
   }, [sessions]);
 
   // Auto-start when navigating from a task with activeTaskId set (e.g., play focus tap)
-  // Intentionally runs only on mount — the empty dep array ensures this.
+  // Runs only once on mount — the ref prevents re-triggering on state changes
+  const hasAutoStarted = useRef(false);
   useEffect(() => {
-    if (state.activeTaskId && !state.isRunning) {
+    if (!hasAutoStarted.current && state.activeTaskId && !state.isRunning) {
+      hasAutoStarted.current = true;
       start();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [state.activeTaskId, state.isRunning, start]);
 
   // Fetch active task if one is set
-  const { data: activeTask } = useQuery({
+  useQuery({
     queryKey: ["task", state.activeTaskId],
     queryFn: async () => {
       if (!state.activeTaskId) return null;

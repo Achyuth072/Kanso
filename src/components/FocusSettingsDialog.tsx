@@ -291,10 +291,21 @@ function SettingsForm() {
           </p>
         </div>
         <Tabs
-          value={taskSwitchBehavior === "keepRunning" ? "keep" : taskSwitchBehavior === "pauseOnSwitch" ? "pause" : "reset"}
+          value={
+            taskSwitchBehavior === "keepRunning"
+              ? "keep"
+              : taskSwitchBehavior === "pauseOnSwitch"
+                ? "pause"
+                : "reset"
+          }
           onValueChange={(v) => {
             if (v) {
-              const mapped = v === "keep" ? "keepRunning" : v === "pause" ? "pauseOnSwitch" : "resetOnSwitch";
+              const mapped =
+                v === "keep"
+                  ? "keepRunning"
+                  : v === "pause"
+                    ? "pauseOnSwitch"
+                    : "resetOnSwitch";
               setValue("taskSwitchBehavior", mapped, { shouldValidate: true });
             }
           }}

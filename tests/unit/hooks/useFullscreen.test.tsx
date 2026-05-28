@@ -6,12 +6,13 @@ import { FullscreenToggle } from "@/components/FullscreenToggle";
 
 // ===== Hoisted mocks =====
 
-const { mockSetIsFullscreen, mockSetIsPipActive, mockTrigger } =
-  vi.hoisted(() => ({
+const { mockSetIsFullscreen, mockSetIsPipActive, mockTrigger } = vi.hoisted(
+  () => ({
     mockSetIsFullscreen: vi.fn(),
     mockSetIsPipActive: vi.fn(),
     mockTrigger: vi.fn(),
-  }));
+  }),
+);
 
 // ===== Mock control variables (modified per test) =====
 
@@ -52,12 +53,7 @@ vi.mock("framer-motion", () => ({
     button: React.forwardRef<HTMLButtonElement, React.ComponentProps<"button">>(
       ({ children, onClick, className, ...props }, ref) => {
         return (
-          <button
-            ref={ref}
-            onClick={onClick}
-            className={className}
-            {...props}
-          >
+          <button ref={ref} onClick={onClick} className={className} {...props}>
             {children}
           </button>
         );
@@ -70,12 +66,8 @@ vi.mock("framer-motion", () => ({
 }));
 
 vi.mock("lucide-react", () => ({
-  Maximize2: (props: any) => (
-    <svg data-testid="maximize2-icon" {...props} />
-  ),
-  Minimize2: (props: any) => (
-    <svg data-testid="minimize2-icon" {...props} />
-  ),
+  Maximize2: (props: any) => <svg data-testid="maximize2-icon" {...props} />,
+  Minimize2: (props: any) => <svg data-testid="minimize2-icon" {...props} />,
 }));
 
 // ===== Test suite =====

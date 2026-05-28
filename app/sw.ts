@@ -206,13 +206,10 @@ self.addEventListener("pushsubscriptionchange", (event) => {
         }
 
         // Subscribe with a fresh endpoint
-        const newSubscription =
-          await self.registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(
-              vapidKey,
-            ) as BufferSource,
-          });
+        const newSubscription = await self.registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidKey) as BufferSource,
+        });
 
         // Post new subscription to backend
         const response = await fetch("/api/push/subscribe", {
