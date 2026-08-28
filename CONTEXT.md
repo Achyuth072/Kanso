@@ -134,6 +134,31 @@ do this — there is no self-serve path and no feature. A person who reaches two
 Accounts has two sets of data, and recovering from that is an operator action.
 See `docs/adr/0012-identity-linking.md`.
 
+### Signed out
+
+No session on this device. The Account still exists; this device is simply not
+authenticated to it. Getting back in goes through a **Provider** — a password, a
+magic link, an OAuth round-trip.
+
+### Locked
+
+The session is intact, but the device has discarded the means to read the
+Account's **content**: the key and every decrypted copy of the data. Unlocking
+asks for the passphrase only — no Provider, no email, no network.
+
+**Locked and Signed out are not degrees of the same thing.** Locking is about
+content; signing out is about identity. A Locked app is still signed in. A
+Signed-out app is not "locked" — it has nothing to unlock, because signing out
+discards the key too.
+
+Locking is a **user choice**, not a protection Kagelin relies on: it addresses a
+shared or stolen unlocked device, nothing else. It is always available as a
+deliberate action, and may additionally be set to happen after a period of
+inactivity — off by default, because while Locked, reminders can no longer say
+_what_ is due, only that something is.
+
+_Avoid_: "log out to lock", which implies one is a way of doing the other.
+
 ---
 
 ## Tiers
@@ -150,6 +175,13 @@ stay a Guest, and back up to a server you own. There is deliberately no
 would be a Guest that also cannot receive reminders, since reminders are
 scheduled from the data server-side.
 
+**Encrypted content is not that mode**, and the two must not be collapsed. An
+encrypted Registered account's rows _do_ reach Kagelin's servers; the server
+simply cannot read what they say. Their schedule stays legible, so reminders are
+scheduled exactly as before. The line is **where the data lives**, not whether
+Kagelin can read it: a Guest's content never arrives, a Registered user's
+arrives unreadable. See `docs/adr/0016-zero-knowledge-content-encryption.md`.
+
 Cannot use Google/Outlook calendar, which structurally requires a
 server-anchored identity. **CalDAV is deferred at every tier**, so it is not a
 Guest capability either.
@@ -159,6 +191,14 @@ Guest capability either.
 A user with a Kagelin account (`auth.uid()`). Data persists to the cloud. Gets
 **on-demand calendar sync**, **WebDAV backup**, and **timer handoff**. Does
 **not** get realtime cross-device mirroring, background auto-sync, or push.
+
+Content is **encrypted**: what the user wrote — task and habit names, notes,
+event titles and locations — is unreadable to Kagelin. What the user _scheduled_
+is not: dates, priorities, durations and completion remain legible, which is
+what lets reminders and analytics keep working. Identity is never covered —
+Kagelin always knows an Account exists and what its email is. Say this
+precisely; "your data is encrypted" overclaims. See
+`docs/adr/0016-zero-knowledge-content-encryption.md`.
 
 ### Premium (paid)
 

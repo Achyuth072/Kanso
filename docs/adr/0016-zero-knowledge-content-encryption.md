@@ -1,0 +1,77 @@
+# Registered content is encrypted so Kagelin cannot read it; its metadata is not
+
+A Registered user's **content** — task and habit names, notes, event titles,
+locations, project and label names — is encrypted on the device before it
+reaches Supabase, under a key Kagelin never holds. The **shape** of that content
+is deliberately left readable: dates, priorities, durations, completion state,
+recurrence. Kagelin can therefore tell you have four things due Tuesday
+afternoon, and cannot tell what any of them are.
+
+This closes the five threats that actually end a product — a stolen database
+dump or R2 backup, a leaked service-role key, a mistaken RLS policy, a breach at
+Supabase, and legal compulsion — by making all of them return ciphertext. It
+does not close XSS, and is not intended to: see
+`0017-libsodium-wrapped-master-key.md` for where that boundary sits.
+
+## This is not the "registered but local-only" mode rejected in ADR 0015
+
+The distinction is easy to lose and worth stating plainly. ADR 0015 rejected an
+account whose content **never leaves the device**, partly because "with no rows
+in Postgres nothing is ever scheduled" — reminders are a database trigger on
+`tasks` feeding `notification_queue`, so a local-only account would have a
+Reminders UI that does nothing.
+
+Encryption is the opposite arrangement. The rows **are** in Postgres. Only the
+text is opaque; `due_date` and `do_date` are ordinary readable columns, so the
+trigger fires exactly as it always did. What changes is that the trigger stores
+the encrypted title instead of interpolating the plaintext one, and the service
+worker decrypts it before display. ADR 0015's rejection stands untouched.
+
+## Considered options
+
+- **Encrypted at rest with Kagelin-held keys** (what Todoist, TickTick, Notion
+  and every mainstream competitor do). Rejected: it defends against a stolen
+  backup and nothing else, and specifically does not stop the operator reading
+  everything — which was the actual motivating complaint. Shipping it under the
+  banner "user data encryption" would claim a property we hadn't built.
+- **Break-glass — encrypted, with a logged, deliberate operator decryption
+  path.** Rejected as the same cryptography with process on top: the guarantee
+  that can honestly be advertised is identical to the option above.
+- **Encrypting metadata too.** Rejected: it destroys every filter and sort the
+  app has, all of which run on dates, priority, project and completion, and it
+  turns a shippable feature into a research project. Lunatask — the closest
+  comparable product, E2EE tasks _and_ habits — draws the line in exactly the
+  same place.
+- **Opt-in rather than universal.** Rejected: opt-in privacy features see
+  single-digit adoption, so a breach still exposes nearly everyone and the claim
+  cannot honestly be made. Universal for new accounts; the existing invite
+  cohort is migrated in a forced client-side pass while it is still small.
+
+## Consequences
+
+- **Server-side features that need the words are permanently foreclosed** —
+  search, semantic dedupe, summarisation, auto-tagging, anything Kagelin-operated
+  reading task text. Structural server logic is unaffected, and _client-side_ AI
+  (in-browser models, local Ollama, bring-your-own-key) remains entirely
+  possible. This was accepted deliberately, not overlooked.
+- **Reminders keep working, but render on the device.** Both notification
+  triggers — the one on `tasks` and the one on `user_timer_state`, which reaches
+  into `tasks` for the finished session's title — and the briefing job compose
+  payloads they cannot read; the service worker decrypts before display. Where the key is unavailable — a fresh device, or a **Locked**
+  app — notifications degrade to naming a count rather than an item. A PWA cannot
+  schedule notifications locally (the Notification Triggers API was cancelled),
+  so server push is not optional here.
+- **Forgetting both the passphrase and the recovery code destroys the data**,
+  and Kagelin cannot help. This is what the guarantee means.
+- **Support becomes consensual.** Users can still hand over data, logs or an
+  export; Kagelin can no longer take it. Scrubbed error reporting keeps stack
+  traces and loses content, which historically would still have caught our real
+  bugs.
+- **Identity is never covered.** `auth.users` is Supabase-managed, so Kagelin
+  always knows who its users are and how often they appear. Any copy claiming
+  otherwise is false.
+- **Anything holding content is in scope, including the non-obvious.** The raw
+  uhabits import blob, the calendar `metadata` JSONB, and free-text error columns
+  each defeat the scheme on their own if missed.
+- **Google- and Outlook-synced events remain plaintext at the provider.** The
+  guarantee is about Kagelin's servers, and the wording must say so.
