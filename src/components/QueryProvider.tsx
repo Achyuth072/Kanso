@@ -2,25 +2,17 @@
 
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { get, set, del } from "idb-keyval";
 import { useState } from "react";
+import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/supabase/client";
 import { taskMutations } from "@/lib/mutations/task";
 import { habitMutations } from "@/lib/mutations/habit";
 import { projectMutations } from "@/lib/mutations/project";
 import { focusMutations } from "@/lib/mutations/focus";
-
-const asyncStoragePersister = {
-  persistClient: async (client: unknown) => {
-    await set("REACT_QUERY_OFFLINE_CACHE", client);
-  },
-  restoreClient: async () => {
-    return await get("REACT_QUERY_OFFLINE_CACHE");
-  },
-  removeClient: async () => {
-    await del("REACT_QUERY_OFFLINE_CACHE");
-  },
-};
+import {
+  asyncStoragePersister,
+  purgePersistedQueryCache,
+} from "@/lib/query-cache-purge";
 
 export default function QueryProvider({
   children,
@@ -31,8 +23,8 @@ export default function QueryProvider({
     const client = new QueryClient({
       defaultOptions: {
         queries: {
-          staleTime: 1000 * 60 * 5, // 5 minutes
-          gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days for offline
+          staleTime: 1000 * 60 * 5,
+          gcTime: 1000 * 60 * 60 * 24 * 7,
           retry: 2,
           refetchOnWindowFocus: true,
           networkMode: "offlineFirst",
@@ -43,8 +35,6 @@ export default function QueryProvider({
       },
     });
 
-    // Register defaults for resumable mutations
-    // Tasks
     client.setMutationDefaults(["createTask"], {
       mutationFn: taskMutations.create,
     });
@@ -64,7 +54,6 @@ export default function QueryProvider({
       mutationFn: taskMutations.clearCompleted,
     });
 
-    // Habits
     client.setMutationDefaults(["createHabit"], {
       mutationFn: habitMutations.create,
     });
@@ -78,7 +67,6 @@ export default function QueryProvider({
       mutationFn: habitMutations.markComplete,
     });
 
-    // Projects
     client.setMutationDefaults(["createProject"], {
       mutationFn: projectMutations.create,
     });
@@ -89,7 +77,6 @@ export default function QueryProvider({
       mutationFn: projectMutations.archive,
     });
 
-    // Focus
     client.setMutationDefaults(["logFocusSession"], {
       mutationFn: focusMutations.logSession,
     });
@@ -102,10 +89,9 @@ export default function QueryProvider({
       client={queryClient}
       persistOptions={{
         persister: asyncStoragePersister,
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+        maxAge: 1000 * 60 * 60 * 24 * 7,
       }}
       onSuccess={() => {
-        // Authenticated Session Guard
         const supabase = createClient();
         const isGuest =
           typeof window !== "undefined" &&
@@ -116,8 +102,12 @@ export default function QueryProvider({
           if (user || isGuest) {
             queryClient.resumePausedMutations();
           } else {
-            // Safety: Clear mutations if no valid session found on reload
-            queryClient.getMutationCache().clear();
+            // Safety: a restored cache with no valid session (expired,
+            // revoked elsewhere) is the same "must not hold readable
+            // content" case as an explicit sign-out — see purgePersistedQueryCache.
+            purgePersistedQueryCache(queryClient).catch((err) =>
+              Sentry.captureException(err),
+            );
           }
         });
       }}
