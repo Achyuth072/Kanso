@@ -41,6 +41,7 @@ import { PwaInstallRow } from "@/components/settings/PwaInstallRow";
 import { DeleteUserDataDialog } from "@/components/settings/DeleteUserDataDialog";
 import { BackupSyncSettings } from "@/components/settings/BackupSyncSettings";
 import { AccountSection } from "@/components/settings/AccountSection";
+import { EncryptionSection } from "@/components/settings/EncryptionSection";
 import { PrivacySection } from "@/components/settings/PrivacySection";
 import { useAccountData } from "@/lib/hooks/useAccountData";
 import { useProfile } from "@/lib/hooks/useProfile";
@@ -495,6 +496,8 @@ export function SettingsClient({ version }: SettingsClientProps) {
                   />
 
                   {!isGuestMode && <AccountSection />}
+
+                  {!isGuestMode && <EncryptionSection />}
 
                   <BackupSyncSettings />
 

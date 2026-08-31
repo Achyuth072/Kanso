@@ -28,6 +28,10 @@ vi.mock("@/components/AuthProvider", () => ({
   useAuth: vi.fn(() => ({ user: { id: "user-1" }, loading: false })),
 }));
 
+vi.mock("@/components/encryption/EncryptionGate", () => ({
+  EncryptionGate: ({ children }: any) => <>{children}</>,
+}));
+
 vi.mock("@/lib/telemetry/client", () => ({
   trackSignupCompleted: vi.fn(),
   trackAppOpened: vi.fn(),

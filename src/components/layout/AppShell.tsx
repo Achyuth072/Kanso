@@ -33,6 +33,7 @@ import {
 import { GlobalHotkeys } from "@/components/layout/GlobalHotkeys";
 import { useMigrationStrategy } from "@/lib/hooks/useMigrationStrategy";
 import { LoaderOverlay } from "@/components/ui/loader-overlay";
+import { EncryptionGate } from "@/components/encryption/EncryptionGate";
 
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/lib/store/uiStore";
@@ -424,7 +425,9 @@ export default function AppShell({ children }: AppShellProps) {
             {loading || !user || isBareRoute ? (
               <>{children}</>
             ) : (
-              <AppShellContent>{children}</AppShellContent>
+              <EncryptionGate>
+                <AppShellContent>{children}</AppShellContent>
+              </EncryptionGate>
             )}
           </PiPProvider>
         </HabitActionsProvider>
