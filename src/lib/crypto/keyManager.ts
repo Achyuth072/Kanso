@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
 import {
-  type Argon2Params,
   DEFAULT_ARGON2_PARAMS,
   base64ToBytes,
   bytesToBase64,
@@ -13,30 +12,34 @@ import {
   wrapMasterKey,
 } from "@/lib/crypto/masterKey";
 import { keyStore } from "@/lib/crypto/keyStore";
+import {
+  encryptionKeyRowCache,
+  type EncryptionKeyRow,
+} from "@/lib/crypto/encryptionKeyRowCache";
 
 export class UnlockError extends Error {}
-
-interface EncryptionKeyRow {
-  user_id: string;
-  passphrase_salt: string;
-  passphrase_kdf_params: Argon2Params;
-  wrapped_key_passphrase: string;
-  recovery_salt: string;
-  recovery_kdf_params: Argon2Params;
-  wrapped_key_recovery: string;
-}
 
 async function fetchEncryptionKeyRow(
   userId: string,
 ): Promise<EncryptionKeyRow | null> {
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("encryption_keys")
-    .select("*")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error) throw error;
-  return (data as EncryptionKeyRow | null) ?? null;
+  try {
+    const { data, error } = await supabase
+      .from("encryption_keys")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) throw error;
+    const row = (data as EncryptionKeyRow | null) ?? null;
+    if (row) await encryptionKeyRowCache.save(userId, row);
+    return row;
+  } catch (err) {
+    // Unlocking (a Locked app, or a reload with no connectivity) must work
+    // offline — fall back to whatever was cached on an earlier online fetch.
+    const cached = await encryptionKeyRowCache.load(userId);
+    if (cached) return cached;
+    throw err;
+  }
 }
 
 export async function hasEncryptionKey(userId: string): Promise<boolean> {
@@ -181,6 +184,10 @@ export async function changePassphrase(
     .eq("user_id", userId);
   if (error) throw error;
 
+  // Re-fetch so the offline cache reflects the new wrap — otherwise a
+  // subsequent offline unlock would fall back to the old passphrase's row.
+  await fetchEncryptionKeyRow(userId);
+
   await keyStore.save(masterKey);
 }
 
@@ -208,6 +215,10 @@ export async function reissueRecoveryCode(userId: string): Promise<string> {
     })
     .eq("user_id", userId);
   if (error) throw error;
+
+  // Re-fetch so the offline cache reflects the new code — otherwise the
+  // invalidated one would still unwrap the key while offline.
+  await fetchEncryptionKeyRow(userId);
 
   return recoveryCode.formatted;
 }

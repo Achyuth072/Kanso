@@ -1,6 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { EncryptionGate } from "@/components/encryption/EncryptionGate";
+import {
+  EncryptionGate,
+  useEncryptionGateActions,
+} from "@/components/encryption/EncryptionGate";
 import { useAuth } from "@/components/AuthProvider";
 import { useEncryptionGate } from "@/lib/hooks/useEncryptionGate";
 import type { EncryptionGateStatus } from "@/lib/hooks/useEncryptionGate";
@@ -21,8 +24,17 @@ vi.mock("@/components/encryption/UnlockScreen", () => ({
   UnlockScreen: () => <div>unlock-screen</div>,
 }));
 
-function mockGate(status: EncryptionGateStatus) {
-  vi.mocked(useEncryptionGate).mockReturnValue({ status, recheck: vi.fn() });
+function mockGate(status: EncryptionGateStatus, lock = vi.fn()) {
+  vi.mocked(useEncryptionGate).mockReturnValue({
+    status,
+    recheck: vi.fn(),
+    lock,
+  });
+}
+
+function LockButton() {
+  const { lock } = useEncryptionGateActions();
+  return <button onClick={() => void lock()}>lock-from-descendant</button>;
 }
 
 describe("EncryptionGate", () => {
@@ -89,5 +101,58 @@ describe("EncryptionGate", () => {
       </EncryptionGate>,
     );
     expect(screen.queryByText("app-content")).not.toBeInTheDocument();
+  });
+
+  it("gives unlocked descendants a lock action that reaches the hook's lock", () => {
+    const lock = vi.fn().mockResolvedValue(undefined);
+    mockGate("unlocked", lock);
+    render(
+      <EncryptionGate>
+        <LockButton />
+      </EncryptionGate>,
+    );
+
+    fireEvent.click(screen.getByText("lock-from-descendant"));
+    expect(lock).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws when a component outside an unlocked gate asks for lock actions", () => {
+    // Suppress the expected React error-boundary console noise.
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(() => render(<LockButton />)).toThrow(
+      "useEncryptionGateActions must be used within an unlocked EncryptionGate",
+    );
+    spy.mockRestore();
+  });
+
+  it("switches from children to the unlock screen once lock resolves", async () => {
+    let resolveLock: () => void = () => {};
+    const lock = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveLock = resolve;
+        }),
+    );
+    mockGate("unlocked", lock);
+    const { rerender } = render(
+      <EncryptionGate>
+        <LockButton />
+      </EncryptionGate>,
+    );
+
+    fireEvent.click(screen.getByText("lock-from-descendant"));
+    resolveLock();
+    await waitFor(() => expect(lock).toHaveBeenCalled());
+
+    // The hook owns status; simulate it flipping to needs-unlock after lock resolves.
+    mockGate("needs-unlock", lock);
+    rerender(
+      <EncryptionGate>
+        <LockButton />
+      </EncryptionGate>,
+    );
+
+    expect(screen.getByText("unlock-screen")).toBeInTheDocument();
+    expect(screen.queryByText("lock-from-descendant")).not.toBeInTheDocument();
   });
 });

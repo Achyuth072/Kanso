@@ -4,15 +4,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 type Row = Record<string, any>;
 const rows = new Map<string, Row>();
 let lastUpdatePayload: Row | null = null;
+let offline = false;
 
 function createEncryptionKeysTable() {
   return {
     select: () => ({
       eq: (_col: string, userId: string) => ({
-        maybeSingle: async () => ({
-          data: rows.get(userId) ?? null,
-          error: null,
-        }),
+        maybeSingle: async () => {
+          if (offline) throw new Error("Failed to fetch");
+          return { data: rows.get(userId) ?? null, error: null };
+        },
       }),
     }),
     insert: async (payload: Row) => {
@@ -54,6 +55,16 @@ vi.mock("@/lib/crypto/keyStore", () => ({
   },
 }));
 
+const rowCache = new Map<string, Row>();
+vi.mock("@/lib/crypto/encryptionKeyRowCache", () => ({
+  encryptionKeyRowCache: {
+    load: vi.fn(async (userId: string) => rowCache.get(userId) ?? null),
+    save: vi.fn(async (userId: string, row: Row) => {
+      rowCache.set(userId, row);
+    }),
+  },
+}));
+
 import {
   setupEncryption,
   unlockWithPassphrase,
@@ -69,8 +80,10 @@ const USER_ID = "user-1";
 describe("keyManager", () => {
   beforeEach(() => {
     rows.clear();
+    rowCache.clear();
     lastUpdatePayload = null;
     keyStoreState.key = null;
+    offline = false;
     vi.clearAllMocks();
   });
 
@@ -125,7 +138,6 @@ describe("keyManager", () => {
       before.wrapped_key_passphrase,
     );
 
-    // The update call itself never even mentions the recovery columns.
     expect(lastUpdatePayload).not.toHaveProperty("wrapped_key_recovery");
     expect(lastUpdatePayload).not.toHaveProperty("recovery_salt");
 
@@ -173,5 +185,64 @@ describe("keyManager", () => {
     keyStoreState.key = null;
 
     await expect(reissueRecoveryCode(USER_ID)).rejects.toThrow(UnlockError);
+  }, 20000);
+
+  it("unlocks offline using the wrapped key row cached from an earlier online fetch — CONTEXT.md requires this", async () => {
+    await setupEncryption(USER_ID, "first passphrase");
+    await hasEncryptionKey(USER_ID);
+    keyStoreState.key = null;
+
+    offline = true;
+    const masterKey = await unlockWithPassphrase(USER_ID, "first passphrase");
+
+    expect(masterKey).toBeInstanceOf(Uint8Array);
+  }, 20000);
+
+  it("still rejects a wrong passphrase offline, using the cached row", async () => {
+    await setupEncryption(USER_ID, "first passphrase");
+    await hasEncryptionKey(USER_ID);
+    keyStoreState.key = null;
+
+    offline = true;
+    await expect(
+      unlockWithPassphrase(USER_ID, "wrong passphrase"),
+    ).rejects.toThrow(UnlockError);
+  }, 20000);
+
+  it("throws the underlying error when offline with nothing cached yet", async () => {
+    offline = true;
+    await expect(unlockWithPassphrase(USER_ID, "anything")).rejects.toThrow(
+      "Failed to fetch",
+    );
+  });
+
+  it("changePassphrase refreshes the offline cache, so a later offline unlock sees the new passphrase, not the old one", async () => {
+    await setupEncryption(USER_ID, "old passphrase");
+    await hasEncryptionKey(USER_ID);
+    await changePassphrase(USER_ID, "old passphrase", "new passphrase");
+    keyStoreState.key = null;
+
+    offline = true;
+    await expect(
+      unlockWithPassphrase(USER_ID, "old passphrase"),
+    ).rejects.toThrow(UnlockError);
+    const masterKey = await unlockWithPassphrase(USER_ID, "new passphrase");
+    expect(masterKey).toBeInstanceOf(Uint8Array);
+  }, 20000);
+
+  it("reissueRecoveryCode refreshes the offline cache, so a later offline unlock sees the new code, not the invalidated one", async () => {
+    const { recoveryCode: oldCode } = await setupEncryption(
+      USER_ID,
+      "my passphrase",
+    );
+    await hasEncryptionKey(USER_ID);
+    const newCode = await reissueRecoveryCode(USER_ID);
+
+    offline = true;
+    await expect(unlockWithRecoveryCode(USER_ID, oldCode)).rejects.toThrow(
+      UnlockError,
+    );
+    const masterKey = await unlockWithRecoveryCode(USER_ID, newCode);
+    expect(masterKey).toBeInstanceOf(Uint8Array);
   }, 20000);
 });

@@ -2,10 +2,15 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { EncryptionSection } from "@/components/settings/EncryptionSection";
 import { useAuth } from "@/components/AuthProvider";
+import { useEncryptionGateActions } from "@/components/encryption/EncryptionGate";
 import { changePassphrase, reissueRecoveryCode } from "@/lib/crypto/keyManager";
 
 vi.mock("@/components/AuthProvider", () => ({
   useAuth: vi.fn(),
+}));
+
+vi.mock("@/components/encryption/EncryptionGate", () => ({
+  useEncryptionGateActions: vi.fn(),
 }));
 
 vi.mock("@/lib/crypto/keyManager", () => ({
@@ -24,6 +29,9 @@ describe("EncryptionSection", () => {
       user: { id: "user-1" },
       isGuestMode: false,
     } as unknown as ReturnType<typeof useAuth>);
+    vi.mocked(useEncryptionGateActions).mockReturnValue({
+      lock: vi.fn().mockResolvedValue(undefined),
+    });
   });
 
   it("renders nothing for a guest", () => {
@@ -83,5 +91,29 @@ describe("EncryptionSection", () => {
 
     fireEvent.click(screen.getByRole("checkbox"));
     expect(doneButton).not.toBeDisabled();
+  });
+
+  it("calls the gate's lock action when Lock Now is clicked", async () => {
+    const lock = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useEncryptionGateActions).mockReturnValue({ lock });
+    render(<EncryptionSection />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Lock now" }));
+
+    await waitFor(() => expect(lock).toHaveBeenCalledTimes(1));
+  });
+
+  it("shows an error and re-enables the button if locking fails", async () => {
+    const lock = vi.fn().mockRejectedValue(new Error("IndexedDB blocked"));
+    vi.mocked(useEncryptionGateActions).mockReturnValue({ lock });
+    render(<EncryptionSection />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Lock now" }));
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Lock now" }),
+      ).not.toBeDisabled(),
+    );
   });
 });

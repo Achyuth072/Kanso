@@ -11,7 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/supabase/client";
 import { EMAIL_CONFIRMED_PATH } from "@/lib/auth/auth-routes";
-import { purgePersistedQueryCache } from "@/lib/query-cache-purge";
+import { purgeDeviceContent } from "@/lib/crypto/purge";
 import type { OAuthProviderId } from "@/lib/auth/providers";
 import type {
   User,
@@ -277,7 +277,7 @@ export function AuthProvider({
     } else {
       await supabase.auth.signOut();
       try {
-        await purgePersistedQueryCache(queryClient);
+        await purgeDeviceContent(queryClient);
       } catch (err) {
         // A purge failure (e.g. IndexedDB blocked) must not strand the user
         // on a "signing out" screen — the session has already ended.

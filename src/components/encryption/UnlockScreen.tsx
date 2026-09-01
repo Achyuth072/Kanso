@@ -58,6 +58,9 @@ export function UnlockScreen({
             {mode === "passphrase" ? "passphrase" : "recovery code"} to
             continue.
           </p>
+          <p className="text-xs text-muted-foreground/80">
+            Reminders can only say something is due, not what, until you unlock.
+          </p>
         </div>
 
         <AuthPasswordField
