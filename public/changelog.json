@@ -1,10 +1,24 @@
 [
   {
+    "version": "1.42.0",
+    "date": "2026-09-01",
+    "channel": "stable",
+    "sections": {
+      "Added": [
+        "Add and edit task steps (subtasks) in the edit sheet, with keyboard shortcuts and drag-to-reorder",
+        "Step progress badge on list and board task cards",
+        "Focus mode subtask checklist with live completion tracking"
+      ],
+      "Fixed": [
+        "Fixed title double-submit, step badge cache staleness, and step haptic double-firing"
+      ]
+    }
+  },
+  {
     "version": "1.42.0-preview.1",
     "date": "2026-09-01",
     "channel": "preview",
-    "sections": {
-    }
+    "sections": {}
   },
   {
     "version": "1.42.0-preview.0",
@@ -785,34 +799,6 @@
         "Google Calendar connect/callback redirect mismatch that could break the OAuth flow",
         "Auth callback no longer accepts unsafe redirect values",
         "Unfinished CalDAV providers hidden from the connect flow"
-      ]
-    }
-  },
-  {
-    "version": "1.24.0",
-    "date": "2026-07-06",
-    "channel": "stable",
-    "sections": {
-      "Added": [
-        "Insights panel for habits and tasks with score, history, streaks, and frequency breakdowns",
-        "Frequency-based habits with weekly/monthly targets and a progress ring",
-        "Global Goals tab summarizing frequency progress across habits",
-        "Stats page: period selector, trend chart, per-habit score comparison, project/priority breakdowns, time-of-day heatmap, and pace projections",
-        "Export stats and insights data as CSV or JSON",
-        "Kagelin app branding and icons"
-      ],
-      "Improved": [
-        "Smoother drag-and-drop reordering on the task board and lists",
-        "Unified Edit/Insights dialog width and toggle styling"
-      ],
-      "Fixed": [
-        "Stats now bucket days by your local timezone, fixing off-by-one trends and streaks for non-UTC users",
-        "Guest-mode hydration mismatch on app shell",
-        "Trend chart axis labels overlapping on mobile",
-        "Maskable icon cropping in the installed PWA",
-        "Various mobile layout issues in the frequency editor, grid cards, and Insights sections",
-        "Custom task order no longer resets when reordering via drag or the sort menu",
-        "Focus trend chart overflowing its container on some layouts"
       ]
     }
   }
