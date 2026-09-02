@@ -13,7 +13,6 @@ const PENDING_CONTENT: Record<string, string[]> = {
   projects: ["name"],
   labels: ["name"],
   habits: ["name", "description"],
-  tasks: ["content", "description"],
   calendar_events: ["title", "description", "location", "category", "metadata"],
   external_calendars: ["name", "username"],
   notification_queue: ["payload"],
@@ -135,7 +134,9 @@ describe("field map covers every content-bearing column", () => {
     expect(stale).toEqual([]);
   });
 
-  it("is empty in this ticket — later tickets populate it as each table is encrypted", () => {
-    expect(fieldMapEntries.size).toBe(0);
+  it("covers task content and description — later tickets extend it to the remaining tables", () => {
+    expect(fieldMapEntries).toEqual(
+      new Set(["tasks.content", "tasks.description"]),
+    );
   });
 });
