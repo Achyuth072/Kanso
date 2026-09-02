@@ -6,15 +6,10 @@ import {
   decryptField,
   isCiphertext,
 } from "@/lib/crypto/contentCipher";
-import { FIELD_MAP, type FieldMap } from "@/lib/supabase/fieldMap";
+import { FIELD_MAP, JSON_FIELDS, type FieldMap } from "@/lib/supabase/fieldMap";
 
-/**
- * Wraps a Supabase client to transparently encrypt configured table fields
- * on write (insert/update/upsert) and decrypt on read.
- *
- * Intercepts `.from(...)` queries only. Realtime subscriptions (`.channel`)
- * and `.rpc` calls bypass this wrapper.
- */
+// Intercepts `.from(...)` queries only — `.channel` and `.rpc` calls bypass
+// the encryption/decryption below.
 export function wrapSupabaseClient<T extends SupabaseClient>(
   client: T,
   fieldMap: FieldMap = FIELD_MAP,
@@ -43,22 +38,37 @@ async function getContentKey(): Promise<Uint8Array | null> {
   return keyStore.load();
 }
 
-// Caches the key promise per query result to avoid redundant IndexedDB reads.
 function createKeyLoader(): () => Promise<Uint8Array | null> {
   let pending: Promise<Uint8Array | null> | null = null;
   return () => (pending ??= getContentKey());
 }
 
-function rowNeedsEncryption(row: unknown, fields: readonly string[]): boolean {
+function isJsonField(table: string, field: string): boolean {
+  return JSON_FIELDS.has(`${table}.${field}`);
+}
+
+function needsEncryption(
+  table: string,
+  field: string,
+  value: unknown,
+): boolean {
+  if (isCiphertext(value)) return false;
+  return isJsonField(table, field) ? value != null : typeof value === "string";
+}
+
+function rowNeedsEncryption(
+  table: string,
+  row: unknown,
+  fields: readonly string[],
+): boolean {
   return (
     isPlainObject(row) &&
-    fields.some(
-      (field) => typeof row[field] === "string" && !isCiphertext(row[field]),
-    )
+    fields.some((field) => needsEncryption(table, field, row[field]))
   );
 }
 
 async function encryptRow(
+  table: string,
   fields: readonly string[],
   row: unknown,
   key: Uint8Array,
@@ -68,9 +78,11 @@ async function encryptRow(
   const out = { ...row };
   for (const field of fields) {
     const value = row[field];
-    // Skip values that are already ciphertext to prevent double-encryption.
-    if (typeof value === "string" && !isCiphertext(value)) {
-      out[field] = await encryptField(key, value);
+    if (needsEncryption(table, field, value)) {
+      out[field] = await encryptField(
+        key,
+        isJsonField(table, field) ? JSON.stringify(value) : (value as string),
+      );
     }
   }
   return out;
@@ -85,7 +97,9 @@ async function encryptPayload(
   if (!fields?.length) return values;
 
   const rows = Array.isArray(values) ? values : [values];
-  if (!rows.some((row) => rowNeedsEncryption(row, fields))) return values;
+  if (!rows.some((row) => rowNeedsEncryption(table, row, fields))) {
+    return values;
+  }
 
   const key = await getContentKey();
   if (!key) {
@@ -96,9 +110,11 @@ async function encryptPayload(
   }
 
   if (Array.isArray(values)) {
-    return Promise.all(values.map((row) => encryptRow(fields, row, key)));
+    return Promise.all(
+      values.map((row) => encryptRow(table, fields, row, key)),
+    );
   }
-  return encryptRow(fields, values, key);
+  return encryptRow(table, fields, values, key);
 }
 
 async function decryptRow(
@@ -118,13 +134,17 @@ async function decryptRow(
         const value = out[field];
         if (isCiphertext(value)) {
           if (out === row) out = { ...row };
-          out[field] = await decryptField(key, value);
+          const plaintext = await decryptField(key, value);
+          out[field] = isJsonField(table, field)
+            ? JSON.parse(plaintext)
+            : plaintext;
         }
       }
     }
   }
 
-  // Recursively decrypt nested relation objects from embedded selects.
+  // Embedded selects nest joined rows under the relation name; recurse so
+  // their encrypted fields get decrypted too.
   for (const [column, value] of Object.entries(out)) {
     if (Array.isArray(value)) {
       if (!value.some(isPlainObject)) continue;
@@ -164,7 +184,6 @@ async function decryptResult(
   return { ...result, data };
 }
 
-// Intercepts query execution (`then`) to decrypt result data when awaited.
 function wrapFilterBuilder(
   builder: any,
   table: string,
@@ -191,10 +210,8 @@ function wrapFilterBuilder(
   return proxy;
 }
 
-/**
- * Defers write execution until async encryption completes, queueing chained builder
- * calls to replay on the real PostgREST builder upon execution.
- */
+// insert/update/upsert must await encryption before the real builder call can
+// be made, so chained calls are queued here and replayed once it resolves.
 function wrapPendingBuilder(
   table: string,
   fieldMap: FieldMap,

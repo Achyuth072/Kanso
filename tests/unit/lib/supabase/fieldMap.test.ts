@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import path from "path";
-import { FIELD_MAP } from "@/lib/supabase/fieldMap";
+import { FIELD_MAP, JSON_FIELDS } from "@/lib/supabase/fieldMap";
 
 /**
  * Ensures all TEXT/VARCHAR/JSONB columns in schema.sql are classified as
@@ -10,8 +10,6 @@ import { FIELD_MAP } from "@/lib/supabase/fieldMap";
 
 // User content fields pending encryption rollout.
 const PENDING_CONTENT: Record<string, string[]> = {
-  calendar_events: ["title", "description", "location", "category", "metadata"],
-  external_calendars: ["name", "username"],
   notification_queue: ["payload"],
   habit_imports: ["raw", "file_name"],
 };
@@ -131,7 +129,7 @@ describe("field map covers every content-bearing column", () => {
     expect(stale).toEqual([]);
   });
 
-  it("covers tasks, habits, projects, and labels — later tickets extend it to the remaining tables", () => {
+  it("covers tasks, habits, projects, labels, and calendars — later tickets extend it to the remaining tables", () => {
     expect(fieldMapEntries).toEqual(
       new Set([
         "tasks.content",
@@ -140,7 +138,21 @@ describe("field map covers every content-bearing column", () => {
         "habits.description",
         "projects.name",
         "labels.name",
+        "calendar_events.title",
+        "calendar_events.description",
+        "calendar_events.location",
+        "calendar_events.category",
+        "calendar_events.metadata",
+        "external_calendars.name",
+        "external_calendars.username",
       ]),
     );
+  });
+
+  it("only marks encrypted columns as JSON", () => {
+    const notEncrypted = [...JSON_FIELDS].filter(
+      (entry) => !fieldMapEntries.has(entry),
+    );
+    expect(notEncrypted).toEqual([]);
   });
 });

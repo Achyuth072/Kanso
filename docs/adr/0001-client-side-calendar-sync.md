@@ -45,3 +45,18 @@ this decision. Deferred pending its own design pass.
 
 The rest of this ADR — client-side adapters, token-in-memory, refresh token
 server-side — is unaffected and still current for Google/Outlook.
+
+## Amended — synced events are encrypted at Kagelin, plaintext at the provider
+
+Event titles, descriptions, locations, categories and the `metadata` JSONB are
+now encrypted before they reach Supabase (ADR 0016). Sync is unaffected: the
+adapters run in the browser behind the encrypting client, so they read and write
+plaintext, and only Kagelin's own storage sees ciphertext. Times, the all-day
+flag, colour, recurrence rule and the provider-side identifiers (`remote_id`,
+`etag`, `ics_uid`, `sync_token`) stay readable — every calendar view and the
+sync merge itself depend on them.
+
+The guarantee is therefore about Kagelin's servers only. An event pulled from
+or pushed to Google or Outlook is stored in plaintext **at that provider**,
+under that provider's terms, exactly as it was before. User-facing copy must
+not imply otherwise.

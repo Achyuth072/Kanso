@@ -12,11 +12,18 @@ function createFakeTable(getRows: () => Row[], setRows: (rows: Row[]) => void) {
     opts: Row | undefined,
   ) {
     const state: {
-      filters: Array<[string, unknown]>;
+      filters: Array<(row: Row) => boolean>;
+      range: [number, number] | null;
       selected: boolean;
       single: boolean;
       maybeSingle: boolean;
-    } = { filters: [], selected: false, single: false, maybeSingle: false };
+    } = {
+      filters: [],
+      range: null,
+      selected: false,
+      single: false,
+      maybeSingle: false,
+    };
 
     const api: Row = {
       select() {
@@ -24,10 +31,23 @@ function createFakeTable(getRows: () => Row[], setRows: (rows: Row[]) => void) {
         return api;
       },
       eq(col: string, val: unknown) {
-        state.filters.push([col, val]);
+        state.filters.push((row) => row[col] === val);
+        return api;
+      },
+      in(col: string, vals: unknown[]) {
+        state.filters.push((row) => vals.includes(row[col]));
+        return api;
+      },
+      // Only the `.not(col, "is", null)` form the sync paths use.
+      not(col: string, _op: string, _val: unknown) {
+        state.filters.push((row) => row[col] != null);
         return api;
       },
       order() {
+        return api;
+      },
+      range(from: number, to: number) {
+        state.range = [from, to];
         return api;
       },
       limit() {
@@ -51,8 +71,7 @@ function createFakeTable(getRows: () => Row[], setRows: (rows: Row[]) => void) {
 
     async function execute() {
       const rows = getRows();
-      const matches = (row: Row) =>
-        state.filters.every(([col, val]) => row[col] === val);
+      const matches = (row: Row) => state.filters.every((f) => f(row));
 
       let resultRows: Row[];
       if (kind === "select") {
@@ -104,6 +123,9 @@ function createFakeTable(getRows: () => Row[], setRows: (rows: Row[]) => void) {
 
       if (kind !== "select" && !state.selected) {
         return { data: null, error: null };
+      }
+      if (state.range) {
+        resultRows = resultRows.slice(state.range[0], state.range[1] + 1);
       }
       if (state.single) return { data: resultRows[0] ?? null, error: null };
       if (state.maybeSingle)

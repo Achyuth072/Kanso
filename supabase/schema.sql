@@ -765,8 +765,6 @@ CREATE TABLE IF NOT EXISTS public.calendar_events (
   created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
   
-  CONSTRAINT calendar_events_title_length_check CHECK (char_length(title) <= 200),
-  CONSTRAINT calendar_events_description_length_check CHECK (char_length(description) <= 2000),
   CONSTRAINT calendar_events_end_after_start CHECK (end_time >= start_time)
 );
 
@@ -836,9 +834,7 @@ CREATE TABLE IF NOT EXISTS public.external_calendars (
   
   -- Timestamps
   created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
-  
-  CONSTRAINT external_calendars_name_length CHECK (char_length(name) <= 100)
+  updated_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 
 -- Indexes

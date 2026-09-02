@@ -248,4 +248,124 @@ describe("wrapSupabaseClient — with the real field map", () => {
     expect(label.name).toBe("Urgent");
     expect(isCiphertext(raw.rawRows("labels")[0].name)).toBe(true);
   });
+
+  it("encrypts calendar event content and the metadata JSONB, leaving times and sync identifiers readable", async () => {
+    const raw = createFakeSupabaseClient();
+    const client = wrapSupabaseClient(raw, FIELD_MAP);
+
+    const metadata = {
+      attendees: ["ada@example.com"],
+      organizer: "grace@example.com",
+      conference_url: "https://meet.example.com/xyz",
+    };
+    const { data: event } = await client
+      .from("calendar_events")
+      .insert({
+        title: "Oncology follow-up",
+        description: "Bring scan results",
+        location: "St Mary's, room 4",
+        category: "health",
+        start_time: "2026-09-03T09:00:00Z",
+        end_time: "2026-09-03T10:00:00Z",
+        all_day: false,
+        color: "#4B6CB7",
+        recurrence_rule: "FREQ=WEEKLY",
+        remote_id: "google-event-123",
+        etag: 'W/"abc"',
+        ics_uid: "uid-1",
+        metadata,
+      })
+      .select()
+      .single();
+
+    expect(event.title).toBe("Oncology follow-up");
+    expect(event.metadata).toEqual(metadata);
+
+    const stored = raw.rawRows("calendar_events")[0];
+    for (const field of [
+      "title",
+      "description",
+      "location",
+      "category",
+      "metadata",
+    ]) {
+      expect(isCiphertext(stored[field])).toBe(true);
+    }
+    expect(stored.start_time).toBe("2026-09-03T09:00:00Z");
+    expect(stored.end_time).toBe("2026-09-03T10:00:00Z");
+    expect(stored.all_day).toBe(false);
+    expect(stored.color).toBe("#4B6CB7");
+    expect(stored.recurrence_rule).toBe("FREQ=WEEKLY");
+    expect(stored.remote_id).toBe("google-event-123");
+    expect(stored.etag).toBe('W/"abc"');
+    expect(stored.ics_uid).toBe("uid-1");
+
+    const { data: read } = await client
+      .from("calendar_events")
+      .select()
+      .eq("id", stored.id)
+      .maybeSingle();
+    expect(read.title).toBe("Oncology follow-up");
+    expect(read.description).toBe("Bring scan results");
+    expect(read.location).toBe("St Mary's, room 4");
+    expect(read.category).toBe("health");
+    expect(read.metadata).toEqual(metadata);
+  });
+
+  it("leaves a null metadata untouched rather than encrypting the absence of one", async () => {
+    const raw = createFakeSupabaseClient();
+    const client = wrapSupabaseClient(raw, FIELD_MAP);
+
+    await client
+      .from("calendar_events")
+      .update({ metadata: null, sync_state: null })
+      .eq("id", "missing");
+
+    await client
+      .from("calendar_events")
+      .insert({ title: "No metadata", metadata: null });
+    expect(raw.rawRows("calendar_events")[0].metadata).toBeNull();
+  });
+
+  it("encrypts the connected-calendar name and CalDAV username, leaving provider and URLs readable", async () => {
+    const raw = createFakeSupabaseClient();
+    const client = wrapSupabaseClient(raw, FIELD_MAP);
+
+    const { data: calendar } = await client
+      .from("external_calendars")
+      .insert({
+        provider: "caldav",
+        name: "Therapy",
+        username: "ada@example.com",
+        server_url: "https://caldav.example.com",
+        remote_calendar_id: "cal-1",
+      })
+      .select()
+      .single();
+
+    expect(calendar.name).toBe("Therapy");
+    expect(calendar.username).toBe("ada@example.com");
+
+    const stored = raw.rawRows("external_calendars")[0];
+    expect(isCiphertext(stored.name)).toBe(true);
+    expect(isCiphertext(stored.username)).toBe(true);
+    expect(stored.provider).toBe("caldav");
+    expect(stored.server_url).toBe("https://caldav.example.com");
+    expect(stored.remote_calendar_id).toBe("cal-1");
+  });
+
+  it("passes a sync-status update through without needing the key", async () => {
+    const raw = createFakeSupabaseClient({
+      external_calendars: [{ id: "c1", name: "Therapy" }],
+    });
+    const client = wrapSupabaseClient(raw, FIELD_MAP);
+    keyStoreState.key = null;
+
+    await client
+      .from("external_calendars")
+      .update({ sync_status: "syncing" })
+      .eq("id", "c1");
+
+    expect(raw.rawRows("external_calendars")[0].sync_status).toBe("syncing");
+  });
 });
