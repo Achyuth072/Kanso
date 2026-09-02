@@ -10,9 +10,6 @@ import { FIELD_MAP } from "@/lib/supabase/fieldMap";
 
 // User content fields pending encryption rollout.
 const PENDING_CONTENT: Record<string, string[]> = {
-  projects: ["name"],
-  labels: ["name"],
-  habits: ["name", "description"],
   calendar_events: ["title", "description", "location", "category", "metadata"],
   external_calendars: ["name", "username"],
   notification_queue: ["payload"],
@@ -134,9 +131,16 @@ describe("field map covers every content-bearing column", () => {
     expect(stale).toEqual([]);
   });
 
-  it("covers task content and description — later tickets extend it to the remaining tables", () => {
+  it("covers tasks, habits, projects, and labels — later tickets extend it to the remaining tables", () => {
     expect(fieldMapEntries).toEqual(
-      new Set(["tasks.content", "tasks.description"]),
+      new Set([
+        "tasks.content",
+        "tasks.description",
+        "habits.name",
+        "habits.description",
+        "projects.name",
+        "labels.name",
+      ]),
     );
   });
 });

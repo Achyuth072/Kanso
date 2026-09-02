@@ -5,4 +5,7 @@ export type FieldMap = Readonly<Record<string, readonly string[]>>;
 
 export const FIELD_MAP: FieldMap = {
   tasks: ["content", "description"],
+  habits: ["name", "description"],
+  projects: ["name"],
+  labels: ["name"],
 };

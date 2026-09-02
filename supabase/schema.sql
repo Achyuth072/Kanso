@@ -604,9 +604,6 @@ CREATE POLICY "Users can delete own notification_queue" ON notification_queue
 
 -- 1. Projects Table Constraints
 ALTER TABLE public.projects
-  ADD CONSTRAINT projects_name_length_check CHECK (char_length(name) <= 50);
-
-ALTER TABLE public.projects
   ADD CONSTRAINT projects_color_check CHECK (color ~* '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$');
 
 -- 2. Tasks Table Constraints
@@ -634,10 +631,7 @@ CREATE TABLE IF NOT EXISTS public.habits (
   updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
   archived_at TIMESTAMPTZ,
   -- Links to its raw record in habit_imports for round-trip export (ADR 0006).
-  source_uuid TEXT,
-
-  CONSTRAINT habits_name_length_check CHECK (char_length(name) <= 100),
-  CONSTRAINT habits_description_length_check CHECK (char_length(description) <= 500)
+  source_uuid TEXT
 );
 
 -- Index for faster user-scoped lookups

@@ -196,23 +196,56 @@ describe("wrapSupabaseClient — with the real field map", () => {
     const raw = createFakeSupabaseClient();
     const client = wrapSupabaseClient(raw, FIELD_MAP);
 
-    await client.from("habits").insert([{ name: "Read" }, { name: "Run" }]);
-    const { data: all } = await client.from("habits").select().limit(10);
-    expect(all.map((r: Row) => r.name)).toEqual(["Read", "Run"]);
-    expect(isCiphertext(raw.rawRows("habits")[0].name)).toBe(false);
+    await client
+      .from("focus_logs")
+      .insert([{ task_id: "t1" }, { task_id: "t2" }]);
+    const { data: all } = await client.from("focus_logs").select().limit(10);
+    expect(all.map((r: Row) => r.task_id)).toEqual(["t1", "t2"]);
+    expect(isCiphertext(raw.rawRows("focus_logs")[0].task_id)).toBe(false);
 
     const { data: single } = await client
-      .from("habits")
+      .from("focus_logs")
       .select()
-      .eq("name", "Read")
+      .eq("task_id", "t1")
       .single();
-    expect(single.name).toBe("Read");
+    expect(single.task_id).toBe("t1");
 
     const { data: maybe } = await client
-      .from("habits")
+      .from("focus_logs")
       .select()
-      .eq("name", "missing")
+      .eq("task_id", "missing")
       .maybeSingle();
     expect(maybe).toBeNull();
+  });
+
+  it("stores an inserted habit and project as ciphertext and reads back the plaintext", async () => {
+    const raw = createFakeSupabaseClient();
+    const client = wrapSupabaseClient(raw, FIELD_MAP);
+
+    const { data: habit } = await client
+      .from("habits")
+      .insert({ name: "Take medication", description: "Twice daily" })
+      .select()
+      .single();
+    expect(habit.name).toBe("Take medication");
+    expect(habit.description).toBe("Twice daily");
+    expect(isCiphertext(raw.rawRows("habits")[0].name)).toBe(true);
+    expect(isCiphertext(raw.rawRows("habits")[0].description)).toBe(true);
+
+    const { data: project } = await client
+      .from("projects")
+      .insert({ name: "Divorce planning" })
+      .select()
+      .single();
+    expect(project.name).toBe("Divorce planning");
+    expect(isCiphertext(raw.rawRows("projects")[0].name)).toBe(true);
+
+    const { data: label } = await client
+      .from("labels")
+      .insert({ name: "Urgent" })
+      .select()
+      .single();
+    expect(label.name).toBe("Urgent");
+    expect(isCiphertext(raw.rawRows("labels")[0].name)).toBe(true);
   });
 });
