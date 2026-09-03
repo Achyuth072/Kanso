@@ -1,8 +1,19 @@
+import { keyStore } from "@/lib/crypto/keyStore";
+import { decryptField } from "@/lib/crypto/contentCipher";
+
+export interface EncryptedNotificationBody {
+  template: string;
+  ciphertext: string;
+}
+
+const PLACEHOLDER = "{}";
+
 // Some envs' NotificationOptions type is missing these.
 export interface NotificationDisplayOptions extends NotificationOptions {
   vibrate?: number[];
   actions?: Array<{ action: string; title: string; icon?: string }>;
   renotify?: boolean;
+  encrypted?: EncryptedNotificationBody;
 }
 
 export const DEFAULT_NOTIFICATION_OPTIONS: NotificationDisplayOptions = {
@@ -24,10 +35,31 @@ export async function displayNotification(
     await closeNotificationsWithTag(registration, options.tag);
   }
 
+  const { encrypted, ...displayable } = options ?? {};
+  if (encrypted) {
+    displayable.body = await resolveEncryptedBody(encrypted, displayable.body);
+  }
+
   await registration.showNotification(title, {
     ...DEFAULT_NOTIFICATION_OPTIONS,
-    ...options,
+    ...displayable,
   } as NotificationOptions);
+}
+
+async function resolveEncryptedBody(
+  encrypted: EncryptedNotificationBody,
+  fallback: string | undefined,
+): Promise<string | undefined> {
+  try {
+    const key = await keyStore.load();
+    if (!key) return fallback;
+    const plaintext = await decryptField(key, encrypted.ciphertext);
+    // Function replacer avoids interpreting "$" in plaintext as special replacement patterns.
+    return encrypted.template.replace(PLACEHOLDER, () => plaintext);
+  } catch (err) {
+    console.warn("[notifications] Could not decrypt notification body", err);
+    return fallback;
+  }
 }
 
 async function closeNotificationsWithTag(

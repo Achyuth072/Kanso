@@ -392,22 +392,31 @@ SELECT cron.schedule(
   $$SELECT public.invoke_edge_function('daily-briefing')$$
 );
 
--- C. Task Notification Sync Trigger Function
+-- Returns encrypted payload envelope for valid ciphertext, or NULL to omit via jsonb_strip_nulls.
+CREATE OR REPLACE FUNCTION public.encrypted_notification_body(
+  template TEXT,
+  ciphertext TEXT
+)
+RETURNS JSONB
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public
+AS $$
+  SELECT CASE
+    WHEN ciphertext LIKE 'xchacha20poly1305-v1:%'
+    THEN jsonb_build_object('template', template, 'ciphertext', ciphertext)
+  END;
+$$;
+
 CREATE OR REPLACE FUNCTION handle_task_notification_sync()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SET search_path = public
 AS $$
 DECLARE
-  payload_title TEXT;
-  payload_body TEXT;
   user_settings JSONB;
 BEGIN
-  -- 1. CLEANUP: cancel only the notifications this trigger itself creates.
-  -- timer_end rows share reference_id with the task but are owned by the focus
-  -- timer — cancelling those killed running timers' notifications. Scoped to
-  -- scheduled_at > now() (#155) so a row that's already due is left for the
-  -- poller instead of being cancelled by this write.
+  -- Cancel only task-owned due/do notifications; leave timer_end rows and past-due rows (#155) untouched.
   IF TG_OP IN ('UPDATE', 'DELETE') THEN
     UPDATE public.notification_queue
     SET status = 'cancelled'
@@ -417,40 +426,34 @@ BEGIN
       AND scheduled_at > now();
   END IF;
 
-  -- 2. CREATE NEW NOTIFICATIONS: If task is created or updated (and not completed)
   IF (TG_OP IN ('INSERT', 'UPDATE')) AND (NEW.is_completed = FALSE) THEN
-    -- Fetch user settings to check preferences
     SELECT settings INTO user_settings FROM profiles WHERE id = NEW.user_id;
 
-    -- i. Handle Due Date
     IF (user_settings->'notifications'->>'due_date_alerts')::boolean IS NOT FALSE 
        AND NEW.due_date IS NOT NULL AND NEW.due_date > now() THEN
-      payload_title := 'Task Due Soon';
-      payload_body := 'Your task "' || NEW.content || '" is due now.';
-
       INSERT INTO public.notification_queue (user_id, scheduled_at, type, payload, reference_id)
       VALUES (NEW.user_id, NEW.due_date, 'due_date',
-              jsonb_build_object(
-                'title', payload_title,
-                'body', payload_body,
+              jsonb_strip_nulls(jsonb_build_object(
+                'title', 'Task Due Soon',
+                'body', 'You have a task due now.',
+                'encrypted', public.encrypted_notification_body(
+                  'Your task "{}" is due now.', NEW.content),
                 'data', jsonb_build_object('url', '/', 'taskId', NEW.id)
-              ),
+              )),
               NEW.id);
     END IF;
 
-    -- ii. Handle Do Date
     IF (user_settings->'notifications'->>'do_date_alerts')::boolean IS NOT FALSE 
        AND NEW.do_date IS NOT NULL AND NEW.do_date > now() THEN
-      payload_title := 'Time to focus';
-      payload_body := 'Scheduled: ' || NEW.content;
-
       INSERT INTO public.notification_queue (user_id, scheduled_at, type, payload, reference_id)
       VALUES (NEW.user_id, NEW.do_date, 'do_date',
-              jsonb_build_object(
-                'title', payload_title,
-                'body', payload_body,
+              jsonb_strip_nulls(jsonb_build_object(
+                'title', 'Time to focus',
+                'body', 'You have a task scheduled now.',
+                'encrypted', public.encrypted_notification_body(
+                  'Scheduled: {}', NEW.content),
                 'data', jsonb_build_object('url', '/', 'taskId', NEW.id)
-              ),
+              )),
               NEW.id);
     END IF;
   END IF;
@@ -942,7 +945,6 @@ AS $$
 DECLARE
   user_settings JSONB;
   timer_settings JSONB;
-  task_content TEXT;
   session_threshold INT;
   auto_start_break BOOLEAN;
   auto_start_focus BOOLEAN;
@@ -995,10 +997,6 @@ BEGIN
       auto_start_break := COALESCE((timer_settings->>'autoStartBreak')::boolean, false);
       auto_start_focus := COALESCE((timer_settings->>'autoStartFocus')::boolean, false);
 
-      IF NEW.active_task_id IS NOT NULL THEN
-        SELECT content INTO task_content FROM tasks WHERE id = NEW.active_task_id;
-      END IF;
-
       -- Replays timerStore's completeTimer() state machine: a focus interval
       -- advances to shortBreak/longBreak depending on the post-increment
       -- session count vs. the threshold; a break interval always advances
@@ -1011,7 +1009,6 @@ BEGIN
 
         payload_title := CASE WHEN cur_mode = 'focus' THEN 'Focus Complete' ELSE 'Break Complete' END;
         payload_body := CASE
-          WHEN task_content IS NOT NULL THEN 'Finished your "' || task_content || '" session. Great work!'
           WHEN cur_mode = 'focus' THEN 'Your focus session is complete. Take a break!'
           ELSE 'Your break is over. Time to focus!'
         END;

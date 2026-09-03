@@ -55,9 +55,9 @@ worker decrypts it before display. ADR 0015's rejection stands untouched.
   (in-browser models, local Ollama, bring-your-own-key) remains entirely
   possible. This was accepted deliberately, not overlooked.
 - **Reminders keep working, but render on the device.** Both notification
-  triggers — the one on `tasks` and the one on `user_timer_state`, which reaches
-  into `tasks` for the finished session's title — and the briefing job compose
-  payloads they cannot read; the service worker decrypts before display. Where the key is unavailable — a fresh device, or a **Locked**
+  triggers — the one on `tasks` and the one on `user_timer_state` — and the
+  briefing job compose payloads they cannot read; the service worker decrypts
+  before display. Where the key is unavailable — a fresh device, or a **Locked**
   app — notifications degrade to naming a count rather than an item. A PWA cannot
   schedule notifications locally (the Notification Triggers API was cancelled),
   so server push is not optional here.
@@ -91,3 +91,25 @@ violations and push/provider responses echo the rejected row or payload back
 inside it, and no regex can be trusted to catch every shape of that. The
 richer message still reaches the local console and the (scrubbed) error
 reporter; it must not reach a column.
+
+## Amended — what a queued notification may name
+
+A `notification_queue.payload` carries generic copy in `body` plus, when the
+producer has a ciphertext to hand, `encrypted: { template, ciphertext }` — a
+body template with a `{}` placeholder and the item's stored ciphertext,
+untouched. `displayNotification()` (`src/lib/notifications.ts`, the single
+display seam the service worker already funnels through for iOS tag handling)
+substitutes the decrypted text, and falls back to `body` when there is no key
+or the ciphertext does not decrypt. A notification is always shown: on iOS a
+push that displays nothing costs the subscription.
+
+Two producers deliberately name no item at all, rather than pass a ciphertext
+through:
+
+- The **timer_end** chain is projected from `user_timer_state`, which holds no
+  content. Reading `tasks.content` from that trigger — as it used to — put a
+  task's text into a queue row a write to `user_timer_state` produced, which is
+  exactly the leak nobody looks for. The body is generic; `data.taskId` still
+  carries the deep link.
+- The **morning briefing** Edge Function counts rows and selects `id`. It has no
+  key, and a count needs no plaintext.

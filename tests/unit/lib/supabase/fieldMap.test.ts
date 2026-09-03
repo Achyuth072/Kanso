@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import path from "path";
 import { FIELD_MAP, JSON_FIELDS } from "@/lib/supabase/fieldMap";
-// User content fields pending encryption rollout.
-const PENDING_CONTENT: Record<string, string[]> = {
+// Ciphertext envelopes resolved at display time.
+const CIPHERTEXT_PASSTHROUGH: Record<string, string[]> = {
   notification_queue: ["payload"],
 };
 
@@ -70,7 +70,7 @@ const fieldMapEntries = mergeAll(
   ),
 );
 const classifiedEntries = mergeAll(
-  PENDING_CONTENT,
+  CIPHERTEXT_PASSTHROUGH,
   SCRUBBED,
   NON_CONTENT,
   Object.fromEntries(
@@ -107,7 +107,7 @@ describe("field map covers every content-bearing column", () => {
     expect(schemaColumns.length).toBeGreaterThan(40);
   });
 
-  it("classifies every TEXT/JSONB column as FIELD_MAP, pending, scrubbed, or non-content", () => {
+  it("classifies every TEXT/JSONB column as FIELD_MAP, ciphertext passthrough, scrubbed, or non-content", () => {
     const unclassified = schemaColumns.filter(
       (entry) => !classifiedEntries.has(entry),
     );
