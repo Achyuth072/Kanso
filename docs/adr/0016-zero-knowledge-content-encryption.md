@@ -113,3 +113,28 @@ through:
   carries the deep link.
 - The **morning briefing** Edge Function counts rows and selects `id`. It has no
   key, and a count needs no plaintext.
+
+## Amended — what leaves in a crash report
+
+`sentry.shared.ts` runs every outgoing payload through
+`scrubEvent()`/`scrubBreadcrumb()` (`src/lib/errors/scrubEvent.ts`) via
+`beforeSend`, `beforeSendTransaction` and `beforeBreadcrumb`. Kept: stack
+traces with file and line, error type, release, platform, breadcrumb category
+and level, span timings. Dropped: exception and breadcrumb messages, `extra`,
+`contexts.state`, stack-frame locals, request bodies, headers and cookies, and
+everything but `id` on the user.
+
+Two deliberate choices:
+
+- **Messages go wholesale, not by pattern.** Same reasoning as
+  `describeError()`: a message is where a provider echoes the rejected payload,
+  and no regex catches every shape. The error type plus the stack is what
+  diagnosis actually used — checked against this project's real bug history.
+- **URLs are cut at `?`.** Supabase REST puts filter values in the query string
+  (`?title=eq.Buy+milk`), so a breadcrumb URL or an `http.client` span
+  description is content unless truncated. Breadcrumb and span `data` is
+  allowlisted for the same reason.
+
+The scrubber is written against a structural event shape rather than the
+vendor's types, so moving to a self-hosted SDK-compatible backend stays a DSN
+change.
