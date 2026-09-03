@@ -75,3 +75,19 @@ worker decrypts it before display. ADR 0015's rejection stands untouched.
   each defeat the scheme on their own if missed.
 - **Google- and Outlook-synced events remain plaintext at the provider.** The
   guarantee is about Kagelin's servers, and the wording must say so.
+
+## Amended — how "scrubbed, not encrypted" is enforced
+
+`external_calendars.sync_error` and `notification_queue.error_message` stay
+readable so an operator can triage a failed sync or a failed push. They are
+therefore only ever written with a hardcoded literal, or with the output of
+`describeError()` (`src/lib/errors/describeError.ts`, mirrored for Deno in
+`supabase/functions/_shared/errors.ts`).
+
+`describeError()` builds its result from a fixed vocabulary — error class name,
+an opaque SQLSTATE or provider code, an HTTP status — and **discards
+`.message`**. Filtering the message was rejected: Postgres constraint
+violations and push/provider responses echo the rejected row or payload back
+inside it, and no regex can be trusted to catch every shape of that. The
+richer message still reaches the local console and the (scrubbed) error
+reporter; it must not reach a column.

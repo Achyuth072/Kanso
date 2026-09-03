@@ -1,11 +1,18 @@
-/**
- * In-memory PostgREST mock for exercising wrapSupabaseClient without a real backend.
- */
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Row = Record<string, any>;
 
-function createFakeTable(getRows: () => Row[], setRows: (rows: Row[]) => void) {
+export type FailWrite = (ctx: {
+  table: string;
+  kind: "insert" | "update" | "upsert" | "delete";
+  payload: unknown;
+}) => Row | null | undefined;
+
+function createFakeTable(
+  table: string,
+  getRows: () => Row[],
+  setRows: (rows: Row[]) => void,
+  failWrite: FailWrite | undefined,
+) {
   function builder(
     kind: "select" | "insert" | "update" | "upsert" | "delete",
     payload: unknown,
@@ -72,6 +79,11 @@ function createFakeTable(getRows: () => Row[], setRows: (rows: Row[]) => void) {
     async function execute() {
       const rows = getRows();
       const matches = (row: Row) => state.filters.every((f) => f(row));
+
+      if (kind !== "select") {
+        const failure = failWrite?.({ table, kind, payload });
+        if (failure) return { data: null, error: failure, count: null };
+      }
 
       let resultRows: Row[];
       if (kind === "select") {
@@ -145,15 +157,20 @@ function createFakeTable(getRows: () => Row[], setRows: (rows: Row[]) => void) {
   };
 }
 
-export function createFakeSupabaseClient(seed: Record<string, Row[]> = {}) {
+export function createFakeSupabaseClient(
+  seed: Record<string, Row[]> = {},
+  opts: { failWrite?: FailWrite } = {},
+) {
   const store = new Map<string, Row[]>(
     Object.entries(seed).map(([table, rows]) => [table, [...rows]]),
   );
   return {
     from(table: string) {
       return createFakeTable(
+        table,
         () => store.get(table) ?? [],
         (rows) => store.set(table, rows),
+        opts.failWrite,
       );
     },
     rawRows: (table: string) => {

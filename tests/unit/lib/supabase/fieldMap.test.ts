@@ -2,16 +2,9 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import path from "path";
 import { FIELD_MAP, JSON_FIELDS } from "@/lib/supabase/fieldMap";
-
-/**
- * Ensures all TEXT/VARCHAR/JSONB columns in schema.sql are classified as
- * encrypted in FIELD_MAP, pending encryption, scrubbed on write, or non-content.
- */
-
 // User content fields pending encryption rollout.
 const PENDING_CONTENT: Record<string, string[]> = {
   notification_queue: ["payload"],
-  habit_imports: ["raw", "file_name"],
 };
 
 // Error columns scrubbed of user payloads on write rather than encrypted.
@@ -129,7 +122,7 @@ describe("field map covers every content-bearing column", () => {
     expect(stale).toEqual([]);
   });
 
-  it("covers tasks, habits, projects, labels, and calendars — later tickets extend it to the remaining tables", () => {
+  it("covers tasks, habits, projects, labels, calendars, and imports — later tickets extend it to the remaining tables", () => {
     expect(fieldMapEntries).toEqual(
       new Set([
         "tasks.content",
@@ -145,6 +138,8 @@ describe("field map covers every content-bearing column", () => {
         "calendar_events.metadata",
         "external_calendars.name",
         "external_calendars.username",
+        "habit_imports.raw",
+        "habit_imports.file_name",
       ]),
     );
   });

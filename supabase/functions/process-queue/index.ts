@@ -10,7 +10,7 @@ import {
   type FailureResolution,
   type NotificationType,
 } from "../_shared/push-delivery.ts";
-import { toErrorMessage } from "../_shared/errors.ts";
+import { describeError, toErrorMessage } from "../_shared/errors.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -208,7 +208,7 @@ serve(async (req: Request) => {
           await settle(
             item.id,
             resolveFailure(item.retry_count, [undefined]),
-            toErrorMessage(error),
+            describeError(error),
           );
         }
       }

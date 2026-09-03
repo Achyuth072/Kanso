@@ -1,10 +1,6 @@
-/**
- * Sync Orchestrator Service
- * Handles the high-level sync flow for any provider using the SyncAdapter interface.
- */
-
 import "./register-adapters";
 import { createClient } from "@/lib/supabase/client";
+import { describeError } from "@/lib/errors/describeError";
 import { fetchAllRows } from "@/lib/supabase/paginate";
 import type { CalendarEvent } from "@/lib/types/calendar-event";
 import type {
@@ -20,9 +16,6 @@ import {
 } from "./adapter-interface";
 import { computePullMutations, type PullMutations } from "./pull-merge";
 
-/**
- * Perform a full sync for an external calendar
- */
 export async function syncExternalCalendar(
   calendarId: string,
   config: Partial<SyncAdapterConfig> = {},
@@ -133,22 +126,17 @@ export async function syncExternalCalendar(
       last_sync_at: new Date().toISOString(),
     });
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : String(e);
-    result.errors.push(message);
+    const descriptor = describeError(e);
+    result.errors.push(descriptor);
     await updateCalendarStatus(calendarId, {
       sync_status: "error",
-      sync_error: message,
+      sync_error: descriptor,
     });
   }
 
   return result;
 }
 
-/**
- * Push all locally-queued changes (sync_state IS NOT NULL) to the remote provider.
- * Implements the drain rule: if updated_at advanced during the push (concurrent edit),
- * the sync_state is kept as 'pending_update' rather than cleared.
- */
 export async function pushPendingEvents(
   calendar: Pick<
     ExternalCalendar,
@@ -216,19 +204,13 @@ export async function pushPendingEvents(
 
       result.pushed++;
     } catch (e: unknown) {
-      result.errors.push(
-        `Failed to push ${event.id}: ${e instanceof Error ? e.message : String(e)}`,
-      );
+      result.errors.push(`Failed to push ${event.id}: ${describeError(e)}`);
     }
   }
 
   return result;
 }
 
-/**
- * Apply computed pull mutations to the local DB.
- * Writes remote_id and etag as top-level columns, never in metadata.
- */
 export async function applyPullMutations(
   mutations: PullMutations,
   calendar: Pick<ExternalCalendar, "id" | "user_id">,
@@ -294,13 +276,14 @@ export async function applyPullMutations(
       } else if (match.is_archived) {
         revivals.push({ id: match.id, item });
       }
-      // else: live in another calendar — genuine duplicate, skip
     }
 
     if (rows.length > 0) {
       const { error } = await supabase.from("calendar_events").insert(rows);
       if (error) {
-        result.errors.push(`Failed to batch-create events: ${error.message}`);
+        result.errors.push(
+          `Failed to batch-create events: ${describeError(error)}`,
+        );
       } else {
         result.created += rows.length;
       }
@@ -317,7 +300,7 @@ export async function applyPullMutations(
           })
           .eq("id", id);
         if (error)
-          result.errors.push(`Failed to revive ${id}: ${error.message}`);
+          result.errors.push(`Failed to revive ${id}: ${describeError(error)}`);
         else result.created++;
       }),
     );
@@ -334,7 +317,9 @@ export async function applyPullMutations(
         })
         .eq("id", item.id);
       if (error)
-        result.errors.push(`Failed to update ${item.id}: ${error.message}`);
+        result.errors.push(
+          `Failed to update ${item.id}: ${describeError(error)}`,
+        );
       else result.updated++;
     }),
   );
@@ -345,7 +330,9 @@ export async function applyPullMutations(
       .update({ is_archived: true })
       .in("id", mutations.toArchive);
     if (error)
-      result.errors.push(`Failed to batch-archive events: ${error.message}`);
+      result.errors.push(
+        `Failed to batch-archive events: ${describeError(error)}`,
+      );
     else result.archived += mutations.toArchive.length;
   }
 
@@ -355,7 +342,9 @@ export async function applyPullMutations(
       .delete()
       .in("id", mutations.toHardDelete);
     if (error)
-      result.errors.push(`Failed to batch-delete events: ${error.message}`);
+      result.errors.push(
+        `Failed to batch-delete events: ${describeError(error)}`,
+      );
   }
 
   await Promise.all(
@@ -369,7 +358,9 @@ export async function applyPullMutations(
         })
         .eq("id", item.id);
       if (error)
-        result.errors.push(`Failed to adopt ${item.id}: ${error.message}`);
+        result.errors.push(
+          `Failed to adopt ${item.id}: ${describeError(error)}`,
+        );
     }),
   );
 

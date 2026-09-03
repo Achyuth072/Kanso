@@ -130,6 +130,7 @@ CREATE TABLE IF NOT EXISTS public.notification_queue (
   reference_id UUID,
   created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
   sent_at TIMESTAMPTZ,
+  -- Scrubbed plaintext (ADR 0016); must not store raw error payloads.
   error_message TEXT,
   retry_count INT NOT NULL DEFAULT 0,
   claimed_at TIMESTAMPTZ,
@@ -710,6 +711,7 @@ CREATE TABLE IF NOT EXISTS public.habit_imports (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   source_app TEXT NOT NULL DEFAULT 'uhabits',
+  -- Client-encrypted (ADR 0016). raw holds JSON ciphertext; do not use JSONB operators.
   file_name TEXT,
   raw JSONB NOT NULL,
   created_at TIMESTAMPTZ DEFAULT now() NOT NULL
@@ -823,8 +825,9 @@ CREATE TABLE IF NOT EXISTS public.external_calendars (
   sync_token TEXT, -- CTag for CalDAV, nextSyncToken for Google, deltaLink for MS Graph
   last_sync_at TIMESTAMPTZ,
   sync_status TEXT DEFAULT 'pending' CHECK (sync_status IN ('pending', 'syncing', 'success', 'error')),
+  -- Scrubbed plaintext (ADR 0016); see notification_queue.error_message.
   sync_error TEXT,
-  
+
   -- Settings
   sync_enabled BOOLEAN DEFAULT true,
   sync_direction TEXT DEFAULT 'bidirectional' CHECK (sync_direction IN ('bidirectional', 'pull', 'push')),

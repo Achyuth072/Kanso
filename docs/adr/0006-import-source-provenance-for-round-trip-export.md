@@ -45,3 +45,19 @@ but that needs Storage infra and isn't queryable.
   can clear them.
 - This makes round-trip export possible later. It does not build it — no
   export writer ships here.
+
+## Amended — the captured blob is encrypted for registered users
+
+`habit_imports.raw` and `file_name` are now encrypted client-side before they
+reach Supabase (ADR 0016). The blob holds every habit name and every entry
+verbatim, so leaving it readable while encrypting `habits.name` would have
+achieved nothing.
+
+`raw` stays a `JSONB` column but now holds a ciphertext envelope — a JSON
+string, not an object. The future exporter must read it through the encrypting
+client, which serializes on write and parses on read, so the parsed source
+round-trips unchanged. Nothing may query into it with JSONB operators, and
+nothing server-side can read it. `source_app` and `created_at` stay readable.
+
+Guests are unaffected: their capture never leaves the device, so it stays as-is
+in IndexedDB.
