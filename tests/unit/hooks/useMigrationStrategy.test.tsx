@@ -5,6 +5,11 @@ import { useAuth } from "@/components/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
 import { STORAGE_KEY } from "@/lib/mock/mock-store";
 import type { User } from "@supabase/supabase-js";
+import { wrapSupabaseClient } from "@/lib/supabase/wrapClient";
+import { FIELD_MAP } from "@/lib/supabase/fieldMap";
+import { generateMasterKey } from "@/lib/crypto/masterKey";
+import { isCiphertext } from "@/lib/crypto/contentCipher";
+import { createFakeSupabaseClient } from "../support/fakeSupabaseClient";
 
 vi.mock("@/components/AuthProvider", () => ({
   useAuth: vi.fn(),
@@ -23,6 +28,15 @@ vi.mock("@/lib/notify", () => ({
 
 vi.mock("@/lib/telemetry/client", () => ({
   trackSignupCompleted: vi.fn(),
+}));
+
+const keyStoreState: { key: Uint8Array | null } = { key: null };
+vi.mock("@/lib/crypto/keyStore", () => ({
+  keyStore: {
+    load: vi.fn(async () => keyStoreState.key),
+    save: vi.fn(async () => {}),
+    clear: vi.fn(async () => {}),
+  },
 }));
 
 import { trackSignupCompleted } from "@/lib/telemetry/client";
@@ -45,7 +59,6 @@ describe("useMigrationStrategy", () => {
     localStorage.clear();
     vi.stubGlobal("location", { reload: vi.fn() });
 
-    // Helper to create a promise that also has chainable methods
     const createMockBuilder = (data: unknown = [], error: unknown = null) => {
       const promise = Promise.resolve({ data, error });
       const builder = promise as unknown as MockSupabaseBuilder;
@@ -137,11 +150,11 @@ describe("useMigrationStrategy", () => {
       unlinkIdentity: vi.fn(),
     });
 
-    // Only the Inbox exists, but existing tasks still mark this account established.
+    // Existing tasks mark account as established even if only Inbox exists.
     setupMockSequence([
       { data: [{ id: "inbox", is_inbox: true }] },
-      { data: [], count: 12 }, // existing task count
-      { data: [], count: 0 }, // existing habit count
+      { data: [], count: 12 },
+      { data: [], count: 0 },
     ]);
 
     renderHook(() => useMigrationStrategy());
@@ -179,8 +192,8 @@ describe("useMigrationStrategy", () => {
           { id: "p1", is_inbox: false },
         ],
       },
-      { data: [], count: 0 }, // existing task count
-      { data: [], count: 0 }, // existing habit count
+      { data: [], count: 0 },
+      { data: [], count: 0 },
     ]);
 
     renderHook(() => useMigrationStrategy());
@@ -226,9 +239,9 @@ describe("useMigrationStrategy", () => {
     });
 
     setupMockSequence([
-      { data: [] }, // Initial project check
-      { data: { id: "s-p1" } }, // Project insert
-      { data: [{ id: "s-t1", content: "Task 1", created_at: "2023-01-01" }] }, // Task insert
+      { data: [] },
+      { data: { id: "s-p1" } },
+      { data: [{ id: "s-t1", content: "Task 1", created_at: "2023-01-01" }] },
     ]);
 
     renderHook(() => useMigrationStrategy());
@@ -289,14 +302,14 @@ describe("useMigrationStrategy", () => {
     });
 
     setupMockSequence([
-      { data: [] }, // Initial check
+      { data: [] },
       {
         data: [
           { id: "new-parent", content: "Parent", created_at: "2023-01-01" },
           { id: "new-child", content: "Child", created_at: "2023-01-02" },
         ],
-      }, // Task insert
-      { data: {} }, // Task update
+      },
+      { data: {} },
     ]);
 
     renderHook(() => useMigrationStrategy());
@@ -310,6 +323,65 @@ describe("useMigrationStrategy", () => {
       },
       { timeout: 5000 },
     );
+  });
+
+  it("MIG-N-02: migrates guest calendar events, skipping ones synced from an external calendar", async () => {
+    const guestData = {
+      tasks: [],
+      projects: [],
+      habits: [],
+      habit_entries: [],
+      focus_logs: [],
+      events: [
+        {
+          id: "g-e1",
+          title: "Own event",
+          remote_calendar_id: null,
+          is_archived: true,
+          created_at: "2023-01-01",
+        },
+        {
+          id: "g-e2",
+          title: "Synced event",
+          remote_calendar_id: "guest-local-caldav-1",
+          created_at: "2023-01-01",
+        },
+      ],
+    };
+
+    localStorage.setItem("kanso_guest_mode", "true");
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(guestData));
+    mockAuthAsRealUser();
+
+    setupMockSequence([
+      { data: [] },
+      { data: [], count: 0 },
+      { data: [], count: 0 },
+      { data: null, error: null },
+    ]);
+
+    renderHook(() => useMigrationStrategy());
+
+    await waitFor(
+      () => {
+        expect(window.location.reload).toHaveBeenCalled();
+      },
+      { timeout: 4000 },
+    );
+
+    const eventsCall = mockSupabase.from.mock.results.find(
+      (r) =>
+        (r.value as MockSupabaseBuilder).insert.mock.calls.length > 0 &&
+        (r.value as MockSupabaseBuilder).insert.mock.calls[0][0]?.[0]?.title !==
+          undefined,
+    );
+    const insertedEvents = eventsCall
+      ? (eventsCall.value as MockSupabaseBuilder).insert.mock.calls[0][0]
+      : [];
+
+    expect(insertedEvents).toHaveLength(1);
+    expect(insertedEvents[0].title).toBe("Own event");
+    expect(insertedEvents[0].is_archived).toBe(true);
   });
 
   // See docs/adr/0014-demo-data-stripped-on-signup-migration.md.
@@ -336,10 +408,10 @@ describe("useMigrationStrategy", () => {
     mockAuthAsRealUser();
 
     setupMockSequence([
-      { data: [] }, // existing projects (for dedupe)
-      { data: [], count: 0 }, // existing task count
-      { data: [], count: 0 }, // existing habit count
-      { data: [{ id: "s-t1", content: "My task", created_at: "2023-01-02" }] }, // task insert
+      { data: [] },
+      { data: [], count: 0 },
+      { data: [], count: 0 },
+      { data: [{ id: "s-t1", content: "My task", created_at: "2023-01-02" }] },
     ]);
 
     renderHook(() => useMigrationStrategy());
@@ -360,5 +432,104 @@ describe("useMigrationStrategy", () => {
     expect(JSON.stringify(inserted)).not.toContain("Work");
     expect(JSON.stringify(inserted)).not.toContain("3600");
     expect(JSON.stringify(inserted)).toContain("My task");
+  });
+
+  // Uses the wrapped client to assert ciphertext on the server rather than mock call arguments.
+  describe("encrypts on upload", () => {
+    it("MIG-ENC-01: converted tasks, habits and projects arrive as ciphertext", async () => {
+      keyStoreState.key = await generateMasterKey();
+      const raw = createFakeSupabaseClient();
+      vi.mocked(createClient).mockReturnValue(
+        wrapSupabaseClient(raw, FIELD_MAP) as unknown as ReturnType<
+          typeof createClient
+        >,
+      );
+
+      const guestData = {
+        tasks: [
+          {
+            id: "g-t1",
+            content: "Ask oncologist about trial",
+            description: "bring scan results",
+            created_at: "2023-01-01",
+          },
+        ],
+        projects: [{ id: "g-p1", name: "Divorce planning", is_inbox: false }],
+        habits: [{ id: "g-h1", name: "Take medication" }],
+        habit_entries: [],
+        focus_logs: [],
+        events: [
+          {
+            id: "g-e1",
+            title: "Oncology follow-up",
+            location: "St Mary's, room 4",
+            remote_calendar_id: null,
+            created_at: "2023-01-01",
+          },
+        ],
+      };
+      localStorage.setItem("kanso_guest_mode", "true");
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(guestData));
+      mockAuthAsRealUser();
+
+      renderHook(() => useMigrationStrategy());
+
+      await waitFor(() => expect(window.location.reload).toHaveBeenCalled(), {
+        timeout: 4000,
+      });
+
+      const storedTask = raw.rawRows("tasks")[0];
+      const storedProject = raw.rawRows("projects")[0];
+      const storedHabit = raw.rawRows("habits")[0];
+      const storedEvent = raw.rawRows("calendar_events")[0];
+
+      expect(isCiphertext(storedTask.content)).toBe(true);
+      expect(isCiphertext(storedTask.description)).toBe(true);
+      expect(isCiphertext(storedProject.name)).toBe(true);
+      expect(isCiphertext(storedHabit.name)).toBe(true);
+      expect(isCiphertext(storedEvent.title)).toBe(true);
+      expect(isCiphertext(storedEvent.location)).toBe(true);
+
+      const everythingStored = JSON.stringify([
+        ...raw.rawRows("tasks"),
+        ...raw.rawRows("projects"),
+        ...raw.rawRows("habits"),
+        ...raw.rawRows("calendar_events"),
+      ]);
+      expect(everythingStored).not.toContain("Ask oncologist about trial");
+      expect(everythingStored).not.toContain("bring scan results");
+      expect(everythingStored).not.toContain("Divorce planning");
+      expect(everythingStored).not.toContain("Oncology follow-up");
+      expect(everythingStored).not.toContain("St Mary's, room 4");
+      expect(everythingStored).not.toContain("Take medication");
+    });
+
+    it("MIG-ENC-02: never deposits plaintext when no master key is available yet", async () => {
+      keyStoreState.key = null;
+      const raw = createFakeSupabaseClient();
+      vi.mocked(createClient).mockReturnValue(
+        wrapSupabaseClient(raw, FIELD_MAP) as unknown as ReturnType<
+          typeof createClient
+        >,
+      );
+
+      const guestData = {
+        tasks: [
+          { id: "g-t1", content: "Secret task", created_at: "2023-01-01" },
+        ],
+        projects: [],
+        habits: [],
+        habit_entries: [],
+        focus_logs: [],
+      };
+      localStorage.setItem("kanso_guest_mode", "true");
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(guestData));
+      mockAuthAsRealUser();
+
+      renderHook(() => useMigrationStrategy());
+
+      await waitFor(() => expect(raw.rawRows("tasks")).toHaveLength(0));
+      expect(window.location.reload).not.toHaveBeenCalled();
+    });
   });
 });

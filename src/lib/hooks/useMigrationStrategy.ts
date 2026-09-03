@@ -225,6 +225,36 @@ export function useMigrationStrategy() {
         }
       }
 
+      if (guestData.events && guestData.events.length > 0) {
+        // Skip synced external events to prevent FK violations with guest-local
+        // calendar IDs; they are re-synced when the user reconnects the calendar.
+        const eventsToInsert = guestData.events
+          .filter((e) => !e.remote_calendar_id)
+          .map((e) => ({
+            user_id: user.id,
+            title: e.title,
+            description: e.description,
+            location: e.location,
+            start_time: e.start_time,
+            end_time: e.end_time,
+            all_day: e.all_day,
+            color: e.color,
+            category: e.category,
+            recurrence_rule: e.recurrence_rule,
+            metadata: e.metadata,
+            is_archived: e.is_archived,
+            created_at: e.created_at,
+            updated_at: e.updated_at,
+          }));
+
+        if (eventsToInsert.length > 0) {
+          const { error } = await supabase
+            .from("calendar_events")
+            .insert(eventsToInsert);
+          if (error) throw error;
+        }
+      }
+
       if (guestData.focus_logs && guestData.focus_logs.length > 0) {
         const logsToInsert = guestData.focus_logs.map((l) => ({
           user_id: user.id,
