@@ -103,6 +103,25 @@ describe("EncryptionGate", () => {
     expect(screen.queryByText("app-content")).not.toBeInTheDocument();
   });
 
+  it("offers a retry instead of an endless spinner when the status check fails", () => {
+    const recheck = vi.fn();
+    vi.mocked(useEncryptionGate).mockReturnValue({
+      status: "unavailable",
+      recheck,
+      lock: vi.fn(),
+    });
+
+    render(
+      <EncryptionGate>
+        <div>app-content</div>
+      </EncryptionGate>,
+    );
+
+    expect(screen.queryByText("app-content")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(recheck).toHaveBeenCalledTimes(1);
+  });
+
   it("gives unlocked descendants a lock action that reaches the hook's lock", () => {
     const lock = vi.fn().mockResolvedValue(undefined);
     mockGate("unlocked", lock);
@@ -144,7 +163,6 @@ describe("EncryptionGate", () => {
     resolveLock();
     await waitFor(() => expect(lock).toHaveBeenCalled());
 
-    // The hook owns status; simulate it flipping to needs-unlock after lock resolves.
     mockGate("needs-unlock", lock);
     rerender(
       <EncryptionGate>

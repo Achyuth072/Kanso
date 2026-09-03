@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const authState = {
@@ -88,6 +88,32 @@ describe("useEncryptionGate", () => {
     const { result } = renderHook(() => useEncryptionGate(), {
       wrapper: ({ children }) => withQueryClient(children),
     });
+    await waitFor(() => expect(result.current.status).toBe("unlocked"));
+  });
+
+  it("resolves to unavailable when the key-row check fails with nothing cached", async () => {
+    hasEncryptionKeyMock.mockRejectedValue(new Error("Failed to fetch"));
+    keyStoreLoadMock.mockResolvedValue(null);
+
+    const { result } = renderHook(() => useEncryptionGate(), {
+      wrapper: ({ children }) => withQueryClient(children),
+    });
+
+    await waitFor(() => expect(result.current.status).toBe("unavailable"));
+  });
+
+  it("recheck() retries a failed key-row check", async () => {
+    hasEncryptionKeyMock.mockRejectedValueOnce(new Error("Failed to fetch"));
+    keyStoreLoadMock.mockResolvedValue(new Uint8Array([1, 2, 3]));
+
+    const { result } = renderHook(() => useEncryptionGate(), {
+      wrapper: ({ children }) => withQueryClient(children),
+    });
+    await waitFor(() => expect(result.current.status).toBe("unavailable"));
+
+    hasEncryptionKeyMock.mockResolvedValue(true);
+    act(() => result.current.recheck());
+
     await waitFor(() => expect(result.current.status).toBe("unlocked"));
   });
 

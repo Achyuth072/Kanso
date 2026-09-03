@@ -606,16 +606,9 @@ CREATE POLICY "Users can delete own notification_queue" ON notification_queue
 -- 11. MIGRATION: 20260109_rls_hardening (Validation Constraints)
 -- =============================================================================
 
--- 1. Projects Table Constraints
+-- Projects Table Constraints
 ALTER TABLE public.projects
   ADD CONSTRAINT projects_color_check CHECK (color ~* '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$');
-
--- 2. Tasks Table Constraints
-ALTER TABLE public.tasks
-  ADD CONSTRAINT tasks_content_length_check CHECK (char_length(content) <= 500);
-
-ALTER TABLE public.tasks
-  ADD CONSTRAINT tasks_description_length_check CHECK (char_length(description) <= 5000);
 
 -- =============================================================================
 -- 12. HABITS & HABIT_ENTRIES

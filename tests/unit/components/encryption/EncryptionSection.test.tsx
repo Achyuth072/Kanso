@@ -70,6 +70,23 @@ describe("EncryptionSection", () => {
     );
   });
 
+  it("will not change the passphrase with the confirmation left blank", () => {
+    render(<EncryptionSection />);
+
+    fireEvent.change(screen.getByLabelText("Current Passphrase"), {
+      target: { value: "old passphrase" },
+    });
+    fireEvent.change(screen.getByLabelText("New Passphrase"), {
+      target: { value: "a sufficiently long new passphrase" },
+    });
+
+    const submit = screen.getByRole("button", { name: "Change passphrase" });
+    expect(submit).toBeDisabled();
+
+    fireEvent.submit(submit.closest("form")!);
+    expect(changePassphrase).not.toHaveBeenCalled();
+  });
+
   it("generates a new recovery code and shows it, requiring confirmation before it can be dismissed", async () => {
     vi.mocked(reissueRecoveryCode).mockResolvedValue(
       "NEWC-ODEA-BCDE-FGHJ-KMNP-QRST-VWXY-ZABC",

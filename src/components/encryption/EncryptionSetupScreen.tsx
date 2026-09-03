@@ -23,8 +23,8 @@ function PassphraseStep({
   const [error, setError] = useState<string | null>(null);
 
   const { tooShort, weak } = checkPassphraseStrength(passphrase);
-  const mismatch =
-    confirmPassphrase.length > 0 && confirmPassphrase !== passphrase;
+  const mismatch = confirmPassphrase !== passphrase;
+  const showMismatch = confirmPassphrase.length > 0 && mismatch;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +107,7 @@ function PassphraseStep({
         disabled={submitting}
         autoComplete="new-password"
       >
-        {mismatch && (
+        {showMismatch && (
           <p className="text-xs text-destructive">
             Passphrases don&apos;t match.
           </p>

@@ -87,8 +87,8 @@ function ChangePassphraseCard({ userId }: { userId: string }) {
   const [error, setError] = useState<string | null>(null);
 
   const { tooShort, weak } = checkPassphraseStrength(newPassphrase);
-  const mismatch =
-    confirmPassphrase.length > 0 && confirmPassphrase !== newPassphrase;
+  const mismatch = confirmPassphrase !== newPassphrase;
+  const showMismatch = confirmPassphrase.length > 0 && mismatch;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,7 +160,7 @@ function ChangePassphraseCard({ userId }: { userId: string }) {
             disabled={submitting}
             autoComplete="new-password"
           >
-            {mismatch && (
+            {showMismatch && (
               <p className="text-xs text-destructive">
                 Passphrases don&apos;t match.
               </p>

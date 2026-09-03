@@ -56,6 +56,17 @@ describe("EncryptionSetupScreen", () => {
     ).toBeDisabled();
   });
 
+  it("will not set up encryption with the confirmation left blank", () => {
+    render(<EncryptionSetupScreen userId="user-1" onComplete={vi.fn()} />);
+    fillPassphrase("a sufficiently long passphrase", "");
+
+    const submit = screen.getByRole("button", { name: "Set passphrase" });
+    expect(submit).toBeDisabled();
+
+    fireEvent.submit(submit.closest("form")!);
+    expect(setupEncryption).not.toHaveBeenCalled();
+  });
+
   it("warns on a weak passphrase without blocking submission", () => {
     render(<EncryptionSetupScreen userId="user-1" onComplete={vi.fn()} />);
     fillPassphrase("aaaaaaaaaaaaaaaa");

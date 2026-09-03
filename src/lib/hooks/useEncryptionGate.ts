@@ -8,9 +8,15 @@ import { keyStore } from "@/lib/crypto/keyStore";
 import { purgeDeviceContent } from "@/lib/crypto/purge";
 
 export type EncryptionGateStatus =
-  "loading" | "not-applicable" | "needs-setup" | "needs-unlock" | "unlocked";
+  | "loading"
+  | "not-applicable"
+  | "needs-setup"
+  | "needs-unlock"
+  | "unlocked"
+  | "unavailable";
 
-type AsyncStatus = "loading" | "needs-setup" | "needs-unlock" | "unlocked";
+type AsyncStatus =
+  "loading" | "needs-setup" | "needs-unlock" | "unlocked" | "unavailable";
 
 export function useEncryptionGate(): {
   status: EncryptionGateStatus;
@@ -30,14 +36,21 @@ export function useEncryptionGate(): {
     let cancelled = false;
 
     (async () => {
-      const [keyExists, cachedKey] = await Promise.all([
-        hasEncryptionKey(user.id),
-        keyStore.load(),
-      ]);
-      if (cancelled) return;
-      setAsyncStatus(
-        !keyExists ? "needs-setup" : !cachedKey ? "needs-unlock" : "unlocked",
-      );
+      try {
+        const [keyExists, cachedKey] = await Promise.all([
+          hasEncryptionKey(user.id),
+          keyStore.load(),
+        ]);
+        if (cancelled) return;
+        setAsyncStatus(
+          !keyExists ? "needs-setup" : !cachedKey ? "needs-unlock" : "unlocked",
+        );
+      } catch {
+        // Offline with no cached key row: neither screen below can be chosen
+        // (unlocking needs the same row), so surface a retry rather than
+        // leaving the app on its loading overlay forever.
+        if (!cancelled) setAsyncStatus("unavailable");
+      }
     })();
 
     return () => {
@@ -45,7 +58,12 @@ export function useEncryptionGate(): {
     };
   }, [user, authLoading, notApplicable, version]);
 
-  const recheck = useCallback(() => setVersion((v) => v + 1), []);
+  const recheck = useCallback(() => {
+    // Retrying from "unavailable" otherwise leaves that screen up until the
+    // re-check resolves, so the button looks like it did nothing.
+    setAsyncStatus("loading");
+    setVersion((v) => v + 1);
+  }, []);
 
   // Purges are local IndexedDB operations, so locking never depends on the
   // network — the status flips the instant the purge resolves, no re-fetch.
