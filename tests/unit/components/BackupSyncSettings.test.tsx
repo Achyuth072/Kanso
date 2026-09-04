@@ -124,6 +124,35 @@ describe("BackupSyncSettings", () => {
     expect(screen.queryByText("Backup Reminders")).not.toBeInTheDocument();
   });
 
+  it("warns registered users that the Local Backup file leaves the encrypted envelope", () => {
+    useAuthMock.mockReturnValue({ isGuestMode: false });
+    render(<BackupSyncSettings />);
+
+    expect(
+      screen.getByText(/not covered by your content passphrase/i),
+    ).toBeInTheDocument();
+  });
+
+  it("does not show the envelope warning for guests, who have no passphrase", () => {
+    useAuthMock.mockReturnValue({ isGuestMode: true });
+    render(<BackupSyncSettings />);
+
+    expect(
+      screen.queryByText(/not covered by your content passphrase/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it("warns registered users on the WebDAV tab too", () => {
+    useAuthMock.mockReturnValue({ isGuestMode: false });
+    render(<BackupSyncSettings />);
+
+    fireEvent.click(screen.getByRole("tab", { name: /webdav/i }));
+
+    expect(
+      screen.getAllByText(/not covered by your content passphrase/i).length,
+    ).toBeGreaterThan(0);
+  });
+
   it("toggling the Switch updates backupReminderEnabled in the store", () => {
     useAuthMock.mockReturnValue({ isGuestMode: true });
     render(<BackupSyncSettings />);
