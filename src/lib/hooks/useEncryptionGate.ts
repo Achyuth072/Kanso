@@ -53,7 +53,8 @@ export function useEncryptionGate(): {
             ? "needs-setup"
             : !cachedKey
               ? "needs-unlock"
-              : !row.migrated_at
+              : // Older cached rows lack migrated_at (undefined); only explicit null triggers migration.
+                row.migrated_at === null
                 ? "needs-migration"
                 : "unlocked",
         );

@@ -54,16 +54,16 @@ export async function getEncryptionKeyRow(
 
 export async function markMigrationComplete(userId: string): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("encryption_keys")
     .update({ migrated_at: new Date().toISOString() })
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .select()
+    .single();
   if (error) throw error;
 
-  // Re-fetch so the offline cache reflects completion — otherwise a later
-  // offline load would fall back to the stale pre-migration row and re-show
-  // the migration screen.
-  await fetchEncryptionKeyRow(userId);
+  // Direct cache update avoids fetchEncryptionKeyRow's fallback to stale cache on network drop.
+  await encryptionKeyRowCache.save(userId, data as EncryptionKeyRow);
 }
 
 export interface SetupEncryptionResult {

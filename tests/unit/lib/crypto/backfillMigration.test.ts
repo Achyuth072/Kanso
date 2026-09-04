@@ -192,6 +192,50 @@ describe("runBackfillMigration", () => {
     });
   });
 
+  it("guards against a concurrent edit: a row changed after it was read is left alone rather than clobbered", async () => {
+    const base = createFakeSupabaseClient({
+      tasks: [{ id: "t1", user_id: USER_ID, content: "old", updated_at: "t0" }],
+    });
+
+    let concurrentEditApplied = false;
+    const concurrentContent = await encryptField(
+      keyStoreState.key!,
+      "edited from another device",
+    );
+    fakeClient = {
+      ...base,
+      from: (table: string) => {
+        const builder = base.from(table);
+        if (table !== "tasks") return builder;
+        return {
+          ...builder,
+          select: (...args: unknown[]) => {
+            const api = builder.select(...args);
+            const originalThen = api.then.bind(api);
+            api.then = (onFulfilled: unknown, onRejected: unknown) =>
+              originalThen((result: unknown) => {
+                if (!concurrentEditApplied) {
+                  concurrentEditApplied = true;
+                  const stored = base.rawRows("tasks")[0];
+                  stored.content = concurrentContent;
+                  stored.updated_at = "t1";
+                }
+                return (onFulfilled as (v: unknown) => unknown)(result);
+              }, onRejected);
+            return api;
+          },
+        };
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+
+    await runBackfillMigration(USER_ID);
+
+    const stored = fakeClient.rawRows("tasks")[0];
+    expect(stored.content).toBe(concurrentContent);
+    expect(stored.updated_at).toBe("t1");
+  });
+
   it("reports progress incrementally rather than only at the end", async () => {
     fakeClient = createFakeSupabaseClient({
       tasks: [

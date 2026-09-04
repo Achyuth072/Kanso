@@ -21,10 +21,20 @@ function createEncryptionKeysTable() {
       return { error: null };
     },
     update: (payload: Row) => ({
-      eq: async (_col: string, userId: string) => {
+      eq: (_col: string, userId: string) => {
         lastUpdatePayload = payload;
         rows.set(userId, { ...rows.get(userId), ...payload });
-        return { error: null };
+        const result = { data: null, error: null };
+        return {
+          then: (onFulfilled: (v: typeof result) => unknown) =>
+            Promise.resolve(result).then(onFulfilled),
+          select: () => ({
+            single: async () => ({
+              data: rows.get(userId) ?? null,
+              error: null,
+            }),
+          }),
+        };
       },
     }),
   };

@@ -91,6 +91,16 @@ describe("useEncryptionGate", () => {
     await waitFor(() => expect(result.current.status).toBe("needs-migration"));
   });
 
+  it("resolves to unlocked, not needs-migration, when a row cached before migrated_at existed comes back with the field missing", async () => {
+    getEncryptionKeyRowMock.mockResolvedValue({} as { migrated_at: null });
+    keyStoreLoadMock.mockResolvedValue(new Uint8Array([1, 2, 3]));
+
+    const { result } = renderHook(() => useEncryptionGate(), {
+      wrapper: ({ children }) => withQueryClient(children),
+    });
+    await waitFor(() => expect(result.current.status).toBe("unlocked"));
+  });
+
   it("resolves to unlocked when the device already has the key cached and migration is complete", async () => {
     getEncryptionKeyRowMock.mockResolvedValue({
       migrated_at: "2026-09-04T00:00:00Z",
