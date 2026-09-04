@@ -49,6 +49,10 @@ interface UiState {
   setBackupReminderEnabled: (enabled: boolean) => void;
   backupReminderFrequencyDays: number;
   setBackupReminderFrequencyDays: (days: number) => void;
+  autoLockEnabled: boolean;
+  setAutoLockEnabled: (enabled: boolean) => void;
+  autoLockMinutes: number;
+  setAutoLockMinutes: (minutes: number) => void;
 
   // Global Goals (aggregate targets, not per-item — see CONTEXT.md "Goals")
   goals: GoalsState;
@@ -150,6 +154,10 @@ export const useUiStore = create<UiState>()(
       backupReminderFrequencyDays: 7,
       setBackupReminderFrequencyDays: (days) =>
         set({ backupReminderFrequencyDays: days }),
+      autoLockEnabled: false,
+      setAutoLockEnabled: (enabled) => set({ autoLockEnabled: enabled }),
+      autoLockMinutes: 60,
+      setAutoLockMinutes: (minutes) => set({ autoLockMinutes: minutes }),
 
       // Global Goals defaults
       goals: {

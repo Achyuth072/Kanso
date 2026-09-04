@@ -1,11 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/AuthProvider";
 import { getEncryptionKeyRow } from "@/lib/crypto/keyManager";
 import { keyStore } from "@/lib/crypto/keyStore";
 import { purgeDeviceContent } from "@/lib/crypto/purge";
+import { getIdleMs } from "@/lib/crypto/autoLock";
+import { useAutoLockTimer } from "@/lib/hooks/useAutoLockTimer";
+import { useUiStore } from "@/lib/store/uiStore";
 
 export type EncryptionGateStatus =
   | "loading"
@@ -33,6 +36,14 @@ export function useEncryptionGate(): {
   const queryClient = useQueryClient();
   const [asyncStatus, setAsyncStatus] = useState<AsyncStatus>("loading");
   const [version, setVersion] = useState(0);
+  const autoLockEnabled = useUiStore((s) => s.autoLockEnabled);
+  const autoLockMinutes = useUiStore((s) => s.autoLockMinutes);
+  const autoLockEnabledRef = useRef(autoLockEnabled);
+  const autoLockMinutesRef = useRef(autoLockMinutes);
+  useEffect(() => {
+    autoLockEnabledRef.current = autoLockEnabled;
+    autoLockMinutesRef.current = autoLockMinutes;
+  }, [autoLockEnabled, autoLockMinutes]);
 
   const notApplicable = !authLoading && (!user || isGuestMode);
 
@@ -48,20 +59,29 @@ export function useEncryptionGate(): {
           keyStore.load(),
         ]);
         if (cancelled) return;
+
+        const wouldUnlock = !!row && !!cachedKey && row.migrated_at !== null;
+        if (
+          wouldUnlock &&
+          autoLockEnabledRef.current &&
+          getIdleMs() >= autoLockMinutesRef.current * 60_000
+        ) {
+          await purgeDeviceContent(queryClient);
+          if (!cancelled) setAsyncStatus("needs-unlock");
+          return;
+        }
+
         setAsyncStatus(
           !row
             ? "needs-setup"
             : !cachedKey
               ? "needs-unlock"
-              : // Older cached rows lack migrated_at (undefined); only explicit null triggers migration.
+              : // Legacy cached rows lack migrated_at; explicit null triggers migration.
                 row.migrated_at === null
                 ? "needs-migration"
                 : "unlocked",
         );
       } catch {
-        // Offline with no cached key row: neither screen below can be chosen
-        // (unlocking needs the same row), so surface a retry rather than
-        // leaving the app on its loading overlay forever.
         if (!cancelled) setAsyncStatus("unavailable");
       }
     })();
@@ -69,21 +89,23 @@ export function useEncryptionGate(): {
     return () => {
       cancelled = true;
     };
-  }, [user, authLoading, notApplicable, version]);
+  }, [user, authLoading, notApplicable, version, queryClient]);
 
   const recheck = useCallback(() => {
-    // Retrying from "unavailable" otherwise leaves that screen up until the
-    // re-check resolves, so the button looks like it did nothing.
     setAsyncStatus("loading");
     setVersion((v) => v + 1);
   }, []);
 
-  // Purges are local IndexedDB operations, so locking never depends on the
-  // network — the status flips the instant the purge resolves, no re-fetch.
   const lock = useCallback(async () => {
     await purgeDeviceContent(queryClient);
     setAsyncStatus("needs-unlock");
   }, [queryClient]);
+
+  useAutoLockTimer(
+    autoLockEnabled && asyncStatus === "unlocked",
+    autoLockMinutes,
+    lock,
+  );
 
   const status: EncryptionGateStatus = authLoading
     ? "loading"

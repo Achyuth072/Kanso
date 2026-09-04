@@ -20,12 +20,78 @@ import {
 } from "@/components/ui/responsive-dialog";
 import { RecoveryCodeDisplay } from "@/components/encryption/RecoveryCodeDisplay";
 import { PassphraseStrengthHints } from "@/components/encryption/PassphraseStrengthHints";
-import { Loader2, Lock, RefreshCw, ShieldCheck } from "lucide-react";
+import { Loader2, Lock, RefreshCw, ShieldCheck, TimerOff } from "lucide-react";
 import { changePassphrase, reissueRecoveryCode } from "@/lib/crypto/keyManager";
 import { checkPassphraseStrength } from "@/lib/crypto/passphraseStrength";
 import { notify } from "@/lib/notify";
 import { SETTINGS_CARD_CLASS } from "@/components/settings/settingsCardClass";
 import { useEncryptionGateActions } from "@/components/encryption/EncryptionGate";
+import { ToggleRow } from "@/components/settings/ToggleRow";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useUiStore } from "@/lib/store/uiStore";
+
+const AUTO_LOCK_MINUTES_OPTIONS = [
+  { value: "30", label: "30 minutes" },
+  { value: "60", label: "1 hour" },
+  { value: "240", label: "4 hours" },
+  { value: "1440", label: "24 hours" },
+];
+
+function AutoLockCard() {
+  const autoLockEnabled = useUiStore((s) => s.autoLockEnabled);
+  const setAutoLockEnabled = useUiStore((s) => s.setAutoLockEnabled);
+  const autoLockMinutes = useUiStore((s) => s.autoLockMinutes);
+  const setAutoLockMinutes = useUiStore((s) => s.setAutoLockMinutes);
+
+  return (
+    <Card className={SETTINGS_CARD_CLASS}>
+      <CardHeader className="pb-3 px-4 pt-5">
+        <CardTitle className="flex items-center gap-2 text-base font-medium tracking-tight">
+          <TimerOff className="h-4 w-4 text-brand" strokeWidth={2.25} />
+          Auto-Lock
+        </CardTitle>
+        <CardDescription className="text-xs text-muted-foreground/80 lowercase">
+          Lock after inactivity. Reminders still fire while Locked, but lose
+          their detail — only that something is due, not what.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3 px-4 pb-5 pt-0">
+        <ToggleRow
+          icon={TimerOff}
+          title="Lock after inactivity"
+          description="Off by default — doesn't sign you out"
+          checked={autoLockEnabled}
+          onChange={setAutoLockEnabled}
+        />
+        <Select
+          value={String(autoLockMinutes)}
+          onValueChange={(val) => setAutoLockMinutes(Number(val))}
+          disabled={!autoLockEnabled}
+        >
+          <SelectTrigger
+            className="w-full h-10 bg-background/30 border-border/40"
+            aria-label="Auto-lock interval"
+          >
+            <SelectValue placeholder="Interval" />
+          </SelectTrigger>
+          <SelectContent>
+            {AUTO_LOCK_MINUTES_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </CardContent>
+    </Card>
+  );
+}
 
 function LockNowCard() {
   const { lock } = useEncryptionGateActions();
@@ -35,8 +101,6 @@ function LockNowCard() {
     setLocking(true);
     try {
       await lock();
-      // On success this component unmounts — the gate swaps in the unlock
-      // screen — so there is no "locked" state to reset back to here.
     } catch (err) {
       setLocking(false);
       notify.error(
@@ -290,6 +354,7 @@ export function EncryptionSection() {
   return (
     <div className="space-y-6">
       <LockNowCard />
+      <AutoLockCard />
       <ChangePassphraseCard userId={user.id} />
       <RecoveryCodeCard userId={user.id} />
     </div>

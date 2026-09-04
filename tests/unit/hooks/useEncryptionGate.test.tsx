@@ -27,6 +27,20 @@ vi.mock("@/lib/crypto/purge", () => ({
   purgeDeviceContent: (...args: unknown[]) => purgeDeviceContentMock(...args),
 }));
 
+const uiState = { autoLockEnabled: false, autoLockMinutes: 60 };
+vi.mock("@/lib/store/uiStore", () => ({
+  useUiStore: (selector: (s: typeof uiState) => unknown) => selector(uiState),
+}));
+
+const getIdleMsMock = vi.fn(() => 0);
+vi.mock("@/lib/crypto/autoLock", () => ({
+  getIdleMs: () => getIdleMsMock(),
+}));
+
+vi.mock("@/lib/hooks/useAutoLockTimer", () => ({
+  useAutoLockTimer: () => {},
+}));
+
 import { useEncryptionGate } from "@/lib/hooks/useEncryptionGate";
 
 function withQueryClient(children: React.ReactNode) {
@@ -43,6 +57,9 @@ describe("useEncryptionGate", () => {
     authState.loading = false;
     authState.isGuestMode = false;
     purgeDeviceContentMock.mockResolvedValue(undefined);
+    uiState.autoLockEnabled = false;
+    uiState.autoLockMinutes = 60;
+    getIdleMsMock.mockReturnValue(0);
   });
 
   it("resolves to not-applicable for a guest", async () => {
@@ -158,5 +175,39 @@ describe("useEncryptionGate", () => {
     expect(purgeDeviceContentMock).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(result.current.status).toBe("needs-unlock"));
     expect(getEncryptionKeyRowMock).not.toHaveBeenCalled();
+  });
+
+  it("locks immediately on mount when auto-lock is enabled and the device has been idle past the interval", async () => {
+    getEncryptionKeyRowMock.mockResolvedValue({
+      migrated_at: "2026-09-04T00:00:00Z",
+    });
+    keyStoreLoadMock.mockResolvedValue(new Uint8Array([1, 2, 3]));
+    uiState.autoLockEnabled = true;
+    uiState.autoLockMinutes = 30;
+    getIdleMsMock.mockReturnValue(31 * 60_000);
+
+    const { result } = renderHook(() => useEncryptionGate(), {
+      wrapper: ({ children }) => withQueryClient(children),
+    });
+
+    await waitFor(() => expect(result.current.status).toBe("needs-unlock"));
+    expect(purgeDeviceContentMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("stays unlocked when auto-lock is enabled but idle time is under the interval", async () => {
+    getEncryptionKeyRowMock.mockResolvedValue({
+      migrated_at: "2026-09-04T00:00:00Z",
+    });
+    keyStoreLoadMock.mockResolvedValue(new Uint8Array([1, 2, 3]));
+    uiState.autoLockEnabled = true;
+    uiState.autoLockMinutes = 30;
+    getIdleMsMock.mockReturnValue(5 * 60_000);
+
+    const { result } = renderHook(() => useEncryptionGate(), {
+      wrapper: ({ children }) => withQueryClient(children),
+    });
+
+    await waitFor(() => expect(result.current.status).toBe("unlocked"));
+    expect(purgeDeviceContentMock).not.toHaveBeenCalled();
   });
 });
