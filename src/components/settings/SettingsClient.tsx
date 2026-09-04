@@ -43,6 +43,7 @@ import { BackupSyncSettings } from "@/components/settings/BackupSyncSettings";
 import { AccountSection } from "@/components/settings/AccountSection";
 import { EncryptionSection } from "@/components/settings/EncryptionSection";
 import { PrivacySection } from "@/components/settings/PrivacySection";
+import { DiagnosticExportSettings } from "@/components/settings/DiagnosticExportSettings";
 import { useAccountData } from "@/lib/hooks/useAccountData";
 import { useProfile } from "@/lib/hooks/useProfile";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -370,6 +371,8 @@ export function SettingsClient({ version }: SettingsClientProps) {
                     <PwaInstallRow />
 
                     <PrivacySection />
+
+                    <DiagnosticExportSettings />
                   </div>
                 </section>
 
@@ -611,7 +614,6 @@ interface GoalFieldProps {
   onCommit: (value: number | null) => void;
 }
 
-/** Local draft; commits to the store on blur. */
 function GoalField({ label, value, onCommit }: GoalFieldProps) {
   const [text, setText] = useState(value != null ? String(value) : "");
   const [prevValue, setPrevValue] = useState(value);
