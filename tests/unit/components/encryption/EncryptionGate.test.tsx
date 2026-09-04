@@ -24,6 +24,10 @@ vi.mock("@/components/encryption/UnlockScreen", () => ({
   UnlockScreen: () => <div>unlock-screen</div>,
 }));
 
+vi.mock("@/components/encryption/EncryptionMigrationScreen", () => ({
+  EncryptionMigrationScreen: () => <div>migration-screen</div>,
+}));
+
 function mockGate(status: EncryptionGateStatus, lock = vi.fn()) {
   vi.mocked(useEncryptionGate).mockReturnValue({
     status,
@@ -90,6 +94,17 @@ describe("EncryptionGate", () => {
       </EncryptionGate>,
     );
     expect(screen.getByText("unlock-screen")).toBeInTheDocument();
+    expect(screen.queryByText("app-content")).not.toBeInTheDocument();
+  });
+
+  it("renders the migration screen and withholds children when unlocked but not yet backfilled", () => {
+    mockGate("needs-migration");
+    render(
+      <EncryptionGate>
+        <div>app-content</div>
+      </EncryptionGate>,
+    );
+    expect(screen.getByText("migration-screen")).toBeInTheDocument();
     expect(screen.queryByText("app-content")).not.toBeInTheDocument();
   });
 

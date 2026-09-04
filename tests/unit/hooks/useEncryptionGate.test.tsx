@@ -12,9 +12,9 @@ vi.mock("@/components/AuthProvider", () => ({
   useAuth: () => authState,
 }));
 
-const hasEncryptionKeyMock = vi.fn();
+const getEncryptionKeyRowMock = vi.fn();
 vi.mock("@/lib/crypto/keyManager", () => ({
-  hasEncryptionKey: (...args: unknown[]) => hasEncryptionKeyMock(...args),
+  getEncryptionKeyRow: (...args: unknown[]) => getEncryptionKeyRowMock(...args),
 }));
 
 const keyStoreLoadMock = vi.fn();
@@ -62,7 +62,7 @@ describe("useEncryptionGate", () => {
   });
 
   it("resolves to needs-setup when the account has no key row yet", async () => {
-    hasEncryptionKeyMock.mockResolvedValue(false);
+    getEncryptionKeyRowMock.mockResolvedValue(null);
     keyStoreLoadMock.mockResolvedValue(null);
 
     const { result } = renderHook(() => useEncryptionGate(), {
@@ -72,7 +72,7 @@ describe("useEncryptionGate", () => {
   });
 
   it("resolves to needs-unlock when a key row exists but this device has no cached key", async () => {
-    hasEncryptionKeyMock.mockResolvedValue(true);
+    getEncryptionKeyRowMock.mockResolvedValue({ migrated_at: null });
     keyStoreLoadMock.mockResolvedValue(null);
 
     const { result } = renderHook(() => useEncryptionGate(), {
@@ -81,8 +81,20 @@ describe("useEncryptionGate", () => {
     await waitFor(() => expect(result.current.status).toBe("needs-unlock"));
   });
 
-  it("resolves to unlocked when the device already has the key cached", async () => {
-    hasEncryptionKeyMock.mockResolvedValue(true);
+  it("resolves to needs-migration when unlocked but the backfill hasn't completed", async () => {
+    getEncryptionKeyRowMock.mockResolvedValue({ migrated_at: null });
+    keyStoreLoadMock.mockResolvedValue(new Uint8Array([1, 2, 3]));
+
+    const { result } = renderHook(() => useEncryptionGate(), {
+      wrapper: ({ children }) => withQueryClient(children),
+    });
+    await waitFor(() => expect(result.current.status).toBe("needs-migration"));
+  });
+
+  it("resolves to unlocked when the device already has the key cached and migration is complete", async () => {
+    getEncryptionKeyRowMock.mockResolvedValue({
+      migrated_at: "2026-09-04T00:00:00Z",
+    });
     keyStoreLoadMock.mockResolvedValue(new Uint8Array([1, 2, 3]));
 
     const { result } = renderHook(() => useEncryptionGate(), {
@@ -92,7 +104,7 @@ describe("useEncryptionGate", () => {
   });
 
   it("resolves to unavailable when the key-row check fails with nothing cached", async () => {
-    hasEncryptionKeyMock.mockRejectedValue(new Error("Failed to fetch"));
+    getEncryptionKeyRowMock.mockRejectedValue(new Error("Failed to fetch"));
     keyStoreLoadMock.mockResolvedValue(null);
 
     const { result } = renderHook(() => useEncryptionGate(), {
@@ -103,7 +115,7 @@ describe("useEncryptionGate", () => {
   });
 
   it("recheck() retries a failed key-row check", async () => {
-    hasEncryptionKeyMock.mockRejectedValueOnce(new Error("Failed to fetch"));
+    getEncryptionKeyRowMock.mockRejectedValueOnce(new Error("Failed to fetch"));
     keyStoreLoadMock.mockResolvedValue(new Uint8Array([1, 2, 3]));
 
     const { result } = renderHook(() => useEncryptionGate(), {
@@ -111,14 +123,18 @@ describe("useEncryptionGate", () => {
     });
     await waitFor(() => expect(result.current.status).toBe("unavailable"));
 
-    hasEncryptionKeyMock.mockResolvedValue(true);
+    getEncryptionKeyRowMock.mockResolvedValue({
+      migrated_at: "2026-09-04T00:00:00Z",
+    });
     act(() => result.current.recheck());
 
     await waitFor(() => expect(result.current.status).toBe("unlocked"));
   });
 
   it("lock() purges device content and flips status to needs-unlock without a network re-check", async () => {
-    hasEncryptionKeyMock.mockResolvedValue(true);
+    getEncryptionKeyRowMock.mockResolvedValue({
+      migrated_at: "2026-09-04T00:00:00Z",
+    });
     keyStoreLoadMock.mockResolvedValue(new Uint8Array([1, 2, 3]));
 
     const { result } = renderHook(() => useEncryptionGate(), {
@@ -126,11 +142,11 @@ describe("useEncryptionGate", () => {
     });
     await waitFor(() => expect(result.current.status).toBe("unlocked"));
 
-    hasEncryptionKeyMock.mockClear();
+    getEncryptionKeyRowMock.mockClear();
     await result.current.lock();
 
     expect(purgeDeviceContentMock).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(result.current.status).toBe("needs-unlock"));
-    expect(hasEncryptionKeyMock).not.toHaveBeenCalled();
+    expect(getEncryptionKeyRowMock).not.toHaveBeenCalled();
   });
 });

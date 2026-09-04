@@ -9,6 +9,7 @@ import { useEncryptionGate } from "@/lib/hooks/useEncryptionGate";
 import { LoaderOverlay } from "@/components/ui/loader-overlay";
 import { EncryptionSetupScreen } from "@/components/encryption/EncryptionSetupScreen";
 import { UnlockScreen } from "@/components/encryption/UnlockScreen";
+import { EncryptionMigrationScreen } from "@/components/encryption/EncryptionMigrationScreen";
 
 interface EncryptionGateActions {
   lock: () => Promise<void>;
@@ -75,6 +76,10 @@ export function EncryptionGate({ children }: { children: React.ReactNode }) {
 
   if (status === "needs-unlock") {
     return <UnlockScreen userId={user.id} onUnlocked={recheck} />;
+  }
+
+  if (status === "needs-migration") {
+    return <EncryptionMigrationScreen userId={user.id} onComplete={recheck} />;
   }
 
   return (

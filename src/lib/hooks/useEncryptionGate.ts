@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/AuthProvider";
-import { hasEncryptionKey } from "@/lib/crypto/keyManager";
+import { getEncryptionKeyRow } from "@/lib/crypto/keyManager";
 import { keyStore } from "@/lib/crypto/keyStore";
 import { purgeDeviceContent } from "@/lib/crypto/purge";
 
@@ -12,11 +12,17 @@ export type EncryptionGateStatus =
   | "not-applicable"
   | "needs-setup"
   | "needs-unlock"
+  | "needs-migration"
   | "unlocked"
   | "unavailable";
 
 type AsyncStatus =
-  "loading" | "needs-setup" | "needs-unlock" | "unlocked" | "unavailable";
+  | "loading"
+  | "needs-setup"
+  | "needs-unlock"
+  | "needs-migration"
+  | "unlocked"
+  | "unavailable";
 
 export function useEncryptionGate(): {
   status: EncryptionGateStatus;
@@ -37,13 +43,19 @@ export function useEncryptionGate(): {
 
     (async () => {
       try {
-        const [keyExists, cachedKey] = await Promise.all([
-          hasEncryptionKey(user.id),
+        const [row, cachedKey] = await Promise.all([
+          getEncryptionKeyRow(user.id),
           keyStore.load(),
         ]);
         if (cancelled) return;
         setAsyncStatus(
-          !keyExists ? "needs-setup" : !cachedKey ? "needs-unlock" : "unlocked",
+          !row
+            ? "needs-setup"
+            : !cachedKey
+              ? "needs-unlock"
+              : !row.migrated_at
+                ? "needs-migration"
+                : "unlocked",
         );
       } catch {
         // Offline with no cached key row: neither screen below can be chosen

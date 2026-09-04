@@ -43,11 +43,11 @@ function createKeyLoader(): () => Promise<Uint8Array | null> {
   return () => (pending ??= getContentKey());
 }
 
-function isJsonField(table: string, field: string): boolean {
+export function isJsonField(table: string, field: string): boolean {
   return JSON_FIELDS.has(`${table}.${field}`);
 }
 
-function needsEncryption(
+export function needsEncryption(
   table: string,
   field: string,
   value: unknown,

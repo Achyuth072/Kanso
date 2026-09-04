@@ -24,6 +24,7 @@ const row: EncryptionKeyRow = {
   recovery_salt: "recovery-salt",
   recovery_kdf_params: { m: 1, t: 1, p: 1 },
   wrapped_key_recovery: "wrapped-recovery",
+  migrated_at: null,
 };
 
 describe("encryptionKeyRowCache", () => {

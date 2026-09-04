@@ -1369,6 +1369,7 @@ CREATE TABLE IF NOT EXISTS public.encryption_keys (
   recovery_salt TEXT NOT NULL,
   recovery_kdf_params JSONB NOT NULL,
   wrapped_key_recovery TEXT NOT NULL,
+  migrated_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );

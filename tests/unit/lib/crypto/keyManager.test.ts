@@ -72,6 +72,8 @@ import {
   changePassphrase,
   reissueRecoveryCode,
   hasEncryptionKey,
+  getEncryptionKeyRow,
+  markMigrationComplete,
   UnlockError,
 } from "@/lib/crypto/keyManager";
 
@@ -244,5 +246,28 @@ describe("keyManager", () => {
     );
     const masterKey = await unlockWithRecoveryCode(USER_ID, newCode);
     expect(masterKey).toBeInstanceOf(Uint8Array);
+  }, 20000);
+
+  it("getEncryptionKeyRow reports migrated_at as null until markMigrationComplete runs", async () => {
+    await setupEncryption(USER_ID, "first passphrase");
+
+    expect((await getEncryptionKeyRow(USER_ID))?.migrated_at).toBeFalsy();
+
+    await markMigrationComplete(USER_ID);
+
+    expect((await getEncryptionKeyRow(USER_ID))?.migrated_at).toEqual(
+      expect.any(String),
+    );
+  }, 20000);
+
+  it("markMigrationComplete refreshes the offline cache, so a later offline check sees migration as done", async () => {
+    await setupEncryption(USER_ID, "first passphrase");
+    await hasEncryptionKey(USER_ID);
+    await markMigrationComplete(USER_ID);
+
+    offline = true;
+    expect((await getEncryptionKeyRow(USER_ID))?.migrated_at).toEqual(
+      expect.any(String),
+    );
   }, 20000);
 });
