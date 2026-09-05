@@ -393,6 +393,7 @@ SELECT cron.schedule(
 );
 
 -- Returns encrypted payload envelope for valid ciphertext, or NULL to omit via jsonb_strip_nulls.
+-- Scheme literal below must match SCHEME in src/lib/crypto/envelope.ts.
 CREATE OR REPLACE FUNCTION public.encrypted_notification_body(
   template TEXT,
   ciphertext TEXT

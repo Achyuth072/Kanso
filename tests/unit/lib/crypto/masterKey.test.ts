@@ -80,9 +80,9 @@ describe("encrypt / decrypt", () => {
   it("detects a tampered ciphertext", async () => {
     const key = await generateMasterKey();
     const envelope = await encrypt(key, new TextEncoder().encode("secret"));
-    const [scheme, nonce, ciphertext] = envelope.split(":");
+    const [scheme, keyId, nonce, ciphertext] = envelope.split(":");
     const tamperedChar = ciphertext.at(-1) === "A" ? "B" : "A";
-    const tampered = `${scheme}:${nonce}:${ciphertext.slice(0, -1)}${tamperedChar}`;
+    const tampered = `${scheme}:${keyId}:${nonce}:${ciphertext.slice(0, -1)}${tamperedChar}`;
 
     await expect(decrypt(key, tampered)).rejects.toThrow();
   });

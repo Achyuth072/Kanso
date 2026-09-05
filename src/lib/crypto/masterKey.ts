@@ -1,9 +1,11 @@
 import { getSodium } from "@/lib/crypto/sodium";
+import {
+  sealEnvelope,
+  openEnvelope,
+  toUint8Array,
+} from "@/lib/crypto/envelope";
 
-// Copies input into the current realm to satisfy libsodium's instanceof check across realms (e.g. jsdom).
-function toUint8Array(input: Uint8Array): Uint8Array {
-  return Uint8Array.from(input);
-}
+export { bytesToBase64, base64ToBytes } from "@/lib/crypto/envelope";
 
 // Argon2id parameters stored alongside the salt to allow future upgrades.
 export interface Argon2Params {
@@ -20,8 +22,6 @@ export const DEFAULT_ARGON2_PARAMS: Argon2Params = {
 
 export const MASTER_KEY_BYTES = 32;
 
-const CONTENT_SCHEME = "xchacha20poly1305-v1";
-
 export async function generateMasterKey(): Promise<Uint8Array> {
   const sodium = await getSodium();
   return sodium.randombytes_buf(MASTER_KEY_BYTES);
@@ -30,16 +30,6 @@ export async function generateMasterKey(): Promise<Uint8Array> {
 export async function generateSalt(): Promise<Uint8Array> {
   const sodium = await getSodium();
   return sodium.randombytes_buf(sodium.crypto_pwhash_SALTBYTES);
-}
-
-export async function bytesToBase64(bytes: Uint8Array): Promise<string> {
-  const sodium = await getSodium();
-  return sodium.to_base64(toUint8Array(bytes), sodium.base64_variants.ORIGINAL);
-}
-
-export async function base64ToBytes(base64: string): Promise<Uint8Array> {
-  const sodium = await getSodium();
-  return sodium.from_base64(base64, sodium.base64_variants.ORIGINAL);
 }
 
 // NFKC normalization ensures identical passphrases from different keyboards/OSes derive the same key.
@@ -63,52 +53,14 @@ export async function encrypt(
   key: Uint8Array,
   plaintext: Uint8Array,
 ): Promise<string> {
-  const sodium = await getSodium();
-  const nonce = sodium.randombytes_buf(
-    sodium.crypto_aead_xchacha20poly1305_ietf_NPUBBYTES,
-  );
-  const ciphertext = sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(
-    toUint8Array(plaintext),
-    null,
-    null,
-    nonce,
-    toUint8Array(key),
-  );
-  const nonceB64 = sodium.to_base64(nonce, sodium.base64_variants.ORIGINAL);
-  const ciphertextB64 = sodium.to_base64(
-    ciphertext,
-    sodium.base64_variants.ORIGINAL,
-  );
-  return `${CONTENT_SCHEME}:${nonceB64}:${ciphertextB64}`;
+  return sealEnvelope(key, plaintext);
 }
 
 export async function decrypt(
   key: Uint8Array,
   envelope: string,
 ): Promise<Uint8Array> {
-  const sodium = await getSodium();
-  const [scheme, nonceB64, ciphertextB64] = envelope.split(":");
-  if (scheme !== CONTENT_SCHEME || !nonceB64 || !ciphertextB64) {
-    throw new Error("Unrecognized ciphertext envelope");
-  }
-
-  const nonce = sodium.from_base64(nonceB64, sodium.base64_variants.ORIGINAL);
-  const ciphertext = sodium.from_base64(
-    ciphertextB64,
-    sodium.base64_variants.ORIGINAL,
-  );
-
-  try {
-    return sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(
-      null,
-      ciphertext,
-      null,
-      nonce,
-      toUint8Array(key),
-    );
-  } catch {
-    throw new Error("Decryption failed: wrong key or corrupted ciphertext");
-  }
+  return openEnvelope(key, envelope);
 }
 
 export async function wrapMasterKey(
