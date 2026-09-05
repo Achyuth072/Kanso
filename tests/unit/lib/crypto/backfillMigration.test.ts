@@ -250,4 +250,110 @@ describe("runBackfillMigration", () => {
     expect(calls).toContain(1);
     expect(calls).toContain(2);
   });
+
+  it("cancels a pending notification queued before content encryption without touching an already-encrypted one", async () => {
+    fakeClient = createFakeSupabaseClient({
+      notification_queue: [
+        {
+          id: "n1",
+          user_id: USER_ID,
+          type: "due_date",
+          status: "pending",
+          payload: { body: "Your task is due now." },
+        },
+        {
+          id: "n2",
+          user_id: USER_ID,
+          type: "due_date",
+          status: "pending",
+          payload: {
+            body: "You have a task due now.",
+            encrypted: {
+              template: 'Your task "{}" is due now.',
+              ciphertext: "x",
+            },
+          },
+        },
+        {
+          id: "n3",
+          user_id: "someone-else",
+          type: "due_date",
+          status: "pending",
+          payload: { body: "Your task is due now." },
+        },
+      ],
+    });
+
+    await runBackfillMigration(USER_ID);
+
+    const rows = fakeClient.rawRows("notification_queue");
+    expect(rows.find((r: Row) => r.id === "n1").status).toBe("cancelled");
+    expect(rows.find((r: Row) => r.id === "n2").status).toBe("pending");
+    expect(rows.find((r: Row) => r.id === "n3").status).toBe("pending");
+  });
+
+  it("does not clobber a notification the queue worker delivers between the read and the cancel", async () => {
+    const base = createFakeSupabaseClient({
+      notification_queue: [
+        {
+          id: "n1",
+          user_id: USER_ID,
+          type: "due_date",
+          status: "pending",
+          payload: { body: "Your task is due now." },
+        },
+      ],
+    });
+
+    fakeClient = {
+      ...base,
+      from: (table: string) => {
+        const builder = base.from(table);
+        if (table !== "notification_queue") return builder;
+        return {
+          ...builder,
+          select: (...args: unknown[]) => {
+            const api = builder.select(...args);
+            const originalThen = api.then.bind(api);
+            api.then = (onFulfilled: unknown, onRejected: unknown) =>
+              originalThen((result: unknown) => {
+                base.rawRows("notification_queue")[0].status = "sent";
+                return (onFulfilled as (v: unknown) => unknown)(result);
+              }, onRejected);
+            return api;
+          },
+        };
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+
+    await runBackfillMigration(USER_ID);
+
+    expect(fakeClient.rawRows("notification_queue")[0].status).toBe("sent");
+  });
+
+  it("clears legacy sync_error and notification_queue.error_message text for the user", async () => {
+    fakeClient = createFakeSupabaseClient({
+      external_calendars: [
+        { id: "c1", user_id: USER_ID, sync_error: "stale plaintext error" },
+      ],
+      notification_queue: [
+        {
+          id: "n1",
+          user_id: USER_ID,
+          type: "due_date",
+          status: "sent",
+          payload: {},
+          error_message: "stale plaintext error",
+        },
+      ],
+    });
+
+    await runBackfillMigration(USER_ID);
+
+    expect(fakeClient.rawRows("external_calendars")[0].sync_error).toBeNull();
+    expect(
+      fakeClient.rawRows("notification_queue")[0].error_message,
+    ).toBeNull();
+  });
 });
