@@ -100,6 +100,8 @@ export async function setupEncryption(
     recovery_salt: await bytesToBase64(recoverySalt),
     recovery_kdf_params: DEFAULT_ARGON2_PARAMS,
     wrapped_key_recovery: wrappedByRecovery,
+    // New setups have no pre-existing plaintext to migrate.
+    migrated_at: new Date().toISOString(),
   });
   if (error) throw error;
 

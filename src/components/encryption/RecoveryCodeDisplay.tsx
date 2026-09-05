@@ -5,21 +5,14 @@ import { Check, Copy, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { notify } from "@/lib/notify";
+import { triggerDownload } from "@/lib/utils/stats-export";
 
 function downloadRecoveryCode(code: string) {
-  const blob = new Blob(
-    [
-      `Kagelin recovery code\n\n${code}\n\nThis code, or your passphrase, is the only way to unlock your data. Kagelin cannot recover it for you if both are lost.\n`,
-    ],
-    { type: "text/plain" },
+  triggerDownload(
+    "kagelin-recovery-code.txt",
+    `Kagelin recovery code\n\n${code}\n\nThis code, or your passphrase, is the only way to unlock your data. Kagelin cannot recover it for you if both are lost.\n`,
+    "text/plain",
   );
-  const url = URL.createObjectURL(blob);
-  const anchor = document.body.appendChild(document.createElement("a"));
-  anchor.href = url;
-  anchor.download = "kagelin-recovery-code.txt";
-  anchor.click();
-  document.body.removeChild(anchor);
-  URL.revokeObjectURL(url);
 }
 export function RecoveryCodeDisplay({
   recoveryCode,

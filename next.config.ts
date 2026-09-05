@@ -22,6 +22,7 @@ const withSerwist = withSerwistInit({
 });
 
 const isMobile = process.env.NEXT_PUBLIC_IS_CAPACITOR === "true";
+
 const isTurbopack = process.env.TURBOPACK === "1";
 
 const nextConfig: NextConfig = {
@@ -45,7 +46,7 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          // Retained for older browsers and report-only CSP (superseded by frame-ancestors).
+          // Retained for older browsers; CSP frame-ancestors supersedes it.
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           contentSecurityPolicyHeader({
@@ -84,12 +85,13 @@ const config = withBundleAnalyzer(
   isTurbopack ? nextConfig : withSerwist(nextConfig),
 );
 
+// No-ops unless SENTRY_AUTH_TOKEN and org/project are set.
 export default withSentryConfig(config, {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
   silent: !process.env.CI,
   widenClientFileUpload: true,
-  // Upload source maps once after compilation rather than per compiler pass.
+  // Upload source maps once after the full build instead of per compiler pass.
   useRunAfterProductionCompileHook: true,
   webpack: {
     treeshake: {

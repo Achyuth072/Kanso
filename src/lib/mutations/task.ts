@@ -385,6 +385,7 @@ export const taskMutations = {
       localStorage.getItem("kanso_guest_mode") === "true";
 
     if (isGuest) {
+      // mockStore doesn't cascade delete, so subtasks are not lost.
       mockStore.deleteTask(id);
       return [];
     }
@@ -404,6 +405,7 @@ export const taskMutations = {
     return (subtasks as Task[]) ?? [];
   },
 
+  // Parent is inserted before subtasks to satisfy foreign key constraints.
   restore: async (task: Task, subtasks: Task[] = []): Promise<void> => {
     const supabase = createClient();
 
@@ -420,6 +422,7 @@ export const taskMutations = {
     }
   },
 
+  // Accepts slot-swapped day_orders (not sequential indices) to preserve sort order across groups.
   reorder: async (
     pairs: { id: string; day_order: number }[],
   ): Promise<void> => {

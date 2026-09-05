@@ -258,12 +258,8 @@ describe("keyManager", () => {
     expect(masterKey).toBeInstanceOf(Uint8Array);
   }, 20000);
 
-  it("getEncryptionKeyRow reports migrated_at as null until markMigrationComplete runs", async () => {
+  it("setupEncryption marks a fresh account as already migrated — it has no pre-existing plaintext to backfill", async () => {
     await setupEncryption(USER_ID, "first passphrase");
-
-    expect((await getEncryptionKeyRow(USER_ID))?.migrated_at).toBeFalsy();
-
-    await markMigrationComplete(USER_ID);
 
     expect((await getEncryptionKeyRow(USER_ID))?.migrated_at).toEqual(
       expect.any(String),
