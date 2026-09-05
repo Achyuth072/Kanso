@@ -162,6 +162,19 @@ describe("wrapSupabaseClient — with a populated field map", () => {
     ).rejects.toThrow();
     expect(raw.rawRows("tasks")).toHaveLength(0);
   });
+
+  it("throws rather than silently passing ciphertext through on read when the key is unavailable", async () => {
+    const ciphertext = await encryptField(keyStoreState.key!, "secret");
+    const raw = createFakeSupabaseClient({
+      tasks: [{ id: "t1", content: ciphertext }],
+    });
+    const client = wrapSupabaseClient(raw, testFieldMap);
+    keyStoreState.key = null;
+
+    await expect(
+      client.from("tasks").select().eq("id", "t1").single(),
+    ).rejects.toThrow();
+  });
 });
 
 describe("wrapSupabaseClient — with the real field map", () => {

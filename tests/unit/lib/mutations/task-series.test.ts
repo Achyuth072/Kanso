@@ -219,11 +219,13 @@ describe("recurring_series_id", () => {
       );
       keyStoreState.key = null;
 
+      // The wrapped client's own read-time guard now rejects before the
+      // toggle's initial fetch ever resolves, so the update never runs.
       await expect(
         taskMutations.toggle({ id: "t1", is_completed: true }),
-      ).rejects.toThrow("content encryption key is unavailable");
+      ).rejects.toThrow("master key is unavailable");
 
-      expect(raw.rawRows("tasks")[0].is_completed).toBe(true);
+      expect(raw.rawRows("tasks")[0].is_completed).toBe(false);
       expect(raw.rawRows("tasks")).toHaveLength(1);
     });
   });

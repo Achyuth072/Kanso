@@ -129,16 +129,20 @@ async function decryptRow(
   const fields = fieldMap[table];
   if (fields?.length) {
     const key = await loadKey();
-    if (key) {
-      for (const field of fields) {
-        const value = out[field];
-        if (isCiphertext(value)) {
-          if (out === row) out = { ...row };
-          const plaintext = await decryptField(key, value);
-          out[field] = isJsonField(table, field)
-            ? JSON.parse(plaintext)
-            : plaintext;
+    for (const field of fields) {
+      const value = out[field];
+      if (isCiphertext(value)) {
+        if (!key) {
+          throw new Error(
+            `Cannot read "${table}": content encryption is set up for this ` +
+              "account but the master key is unavailable (locked, or not yet unlocked on this device).",
+          );
         }
+        if (out === row) out = { ...row };
+        const plaintext = await decryptField(key, value);
+        out[field] = isJsonField(table, field)
+          ? JSON.parse(plaintext)
+          : plaintext;
       }
     }
   }
