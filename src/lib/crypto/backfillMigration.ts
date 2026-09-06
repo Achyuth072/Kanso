@@ -29,7 +29,7 @@ const TABLES_WITH_UPDATED_AT = new Set([
 ]);
 
 // Raw client avoids decrypt-on-select to distinguish ciphertext from plaintext.
-async function findPendingRows(userId: string): Promise<PendingRow[]> {
+export async function findPendingRows(userId: string): Promise<PendingRow[]> {
   const raw = createRawClient();
   const pending: PendingRow[] = [];
 

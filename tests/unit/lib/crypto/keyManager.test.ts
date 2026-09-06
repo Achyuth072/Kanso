@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { createFakeSupabaseClient } from "../../support/fakeSupabaseClient";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Row = Record<string, any>;
@@ -48,8 +49,10 @@ const mockSupabase = {
   }),
 };
 
+let rawClient = createFakeSupabaseClient();
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => mockSupabase,
+  createRawClient: () => rawClient,
 }));
 
 const keyStoreState: { key: Uint8Array | null } = { key: null };
@@ -96,6 +99,7 @@ describe("keyManager", () => {
     lastUpdatePayload = null;
     keyStoreState.key = null;
     offline = false;
+    rawClient = createFakeSupabaseClient();
     vi.clearAllMocks();
   });
 
@@ -264,6 +268,16 @@ describe("keyManager", () => {
     expect((await getEncryptionKeyRow(USER_ID))?.migrated_at).toEqual(
       expect.any(String),
     );
+  }, 20000);
+
+  it("setupEncryption leaves migrated_at null for an account with pre-existing plaintext, so the backfill migration still runs", async () => {
+    rawClient = createFakeSupabaseClient({
+      tasks: [{ id: "t1", user_id: USER_ID, content: "Buy milk" }],
+    });
+
+    await setupEncryption(USER_ID, "first passphrase");
+
+    expect((await getEncryptionKeyRow(USER_ID))?.migrated_at).toBeNull();
   }, 20000);
 
   it("markMigrationComplete refreshes the offline cache, so a later offline check sees migration as done", async () => {

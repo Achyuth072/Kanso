@@ -16,6 +16,7 @@ import {
   encryptionKeyRowCache,
   type EncryptionKeyRow,
 } from "@/lib/crypto/encryptionKeyRowCache";
+import { findPendingRows } from "@/lib/crypto/backfillMigration";
 
 export class UnlockError extends Error {}
 
@@ -91,6 +92,10 @@ export async function setupEncryption(
   );
   const wrappedByRecovery = await wrapMasterKey(masterKey, recoveryKey);
 
+  // Accounts with pre-existing plaintext must backfill before being marked migrated.
+  const pending = await findPendingRows(userId);
+  const migratedAt = pending.length === 0 ? new Date().toISOString() : null;
+
   const supabase = createClient();
   const { error } = await supabase.from("encryption_keys").insert({
     user_id: userId,
@@ -100,8 +105,7 @@ export async function setupEncryption(
     recovery_salt: await bytesToBase64(recoverySalt),
     recovery_kdf_params: DEFAULT_ARGON2_PARAMS,
     wrapped_key_recovery: wrappedByRecovery,
-    // New setups have no pre-existing plaintext to migrate.
-    migrated_at: new Date().toISOString(),
+    migrated_at: migratedAt,
   });
   if (error) throw error;
 
