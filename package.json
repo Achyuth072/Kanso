@@ -106,6 +106,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@ast-grep/cli": "^0.45.3",
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
     "@next/bundle-analyzer": "^16.2.10",
@@ -139,5 +140,8 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^6.0.3",
     "vitest": "^4.0.16"
+  },
+  "allowScripts": {
+    "@ast-grep/cli@0.45.3": true
   }
 }
