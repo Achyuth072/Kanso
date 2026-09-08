@@ -8,6 +8,7 @@ import { useHaptic } from "@/lib/hooks/useHaptic";
 import { useCreateCalendarEvent } from "@/lib/hooks/useCalendarEventMutations";
 import { createClient } from "@/lib/supabase/client";
 import { fetchAllRows } from "@/lib/supabase/paginate";
+import { isContentKeyUnavailableError } from "@/lib/supabase/wrapClient";
 import { dedupeIcsEvents } from "@/lib/import/dedupeIcsEvents";
 
 // ics_uid is deliberately outside FIELD_MAP, so it stays readable and this
@@ -109,11 +110,16 @@ export function useIcsImport() {
       );
       trigger("success");
 
-      if (failures.length > 0) {
-        Sentry.captureException(failures[0], {
-          extra: { failedCount: failures.length, total: toCreate.length },
+      // Locked-key failures aren't bugs (the "N failed" toast above already
+      // tells the user), and every row fails identically, so skip Sentry for
+      // those rather than spamming one duplicate report per row.
+      failures
+        .filter((failure) => !isContentKeyUnavailableError(failure))
+        .forEach((failure, index) => {
+          Sentry.captureException(failure, {
+            tags: { failureIndex: index, failedCount: failures.length },
+          });
         });
-      }
 
       if (errors.length > 0) {
         notify.warning(`${errors.length} events had parsing warnings.`);

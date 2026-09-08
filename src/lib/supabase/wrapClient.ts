@@ -98,10 +98,12 @@ async function encryptRow(
   return out;
 }
 
-async function encryptPayload(
+// Shared with call sites that write via the service-role client, which
+// bypasses wrapSupabaseClient's automatic encryption (see connectCalendars).
+export async function encryptPayload(
   table: string,
-  fieldMap: FieldMap,
   values: unknown,
+  fieldMap: FieldMap = FIELD_MAP,
 ): Promise<unknown> {
   const fields = fieldMap[table];
   if (!fields?.length) return values;
@@ -271,7 +273,7 @@ function wrapQueryBuilder(
         const method = prop;
         return (values: unknown, options?: unknown) =>
           wrapPendingBuilder(table, fieldMap, async () => {
-            const encrypted = await encryptPayload(table, fieldMap, values);
+            const encrypted = await encryptPayload(table, values, fieldMap);
             return { builder: target[method](encrypted, options) };
           });
       }

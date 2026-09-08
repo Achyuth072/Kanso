@@ -36,6 +36,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { notify } from "@/lib/notify";
 import { connectCalendars } from "@/lib/mutations/external-calendar";
+import { handleMutationError } from "@/lib/utils/mutation-error";
 
 interface ConnectCalendarDialogProps {
   onSuccess?: () => void;
@@ -133,7 +134,7 @@ export function ConnectCalendarDialog({
       setOpen(false);
       onSuccess?.();
     } catch (e) {
-      notify.error(e instanceof Error ? e.message : "Failed to save calendars");
+      handleMutationError(e);
     } finally {
       setPickerSaving(false);
     }

@@ -1,27 +1,26 @@
-import { keyStore } from "@/lib/crypto/keyStore";
-import { encryptField } from "@/lib/crypto/contentCipher";
+import { encryptPayload } from "@/lib/supabase/wrapClient";
 import type {
   CalendarProvider,
   DiscoveredCalendar,
 } from "@/lib/types/external-calendar";
 
-// Encrypts `name` here rather than via FIELD_MAP: the row is written with the
-// service-role client, which bypasses the encrypting Supabase wrapper.
+// Encrypts `name` here rather than relying on wrapSupabaseClient: the row is
+// written via the API route's service-role client, which bypasses it.
 export async function connectCalendars(
   provider: CalendarProvider,
   picked: DiscoveredCalendar[],
 ): Promise<void> {
-  const key = await keyStore.load();
-  if (!key) {
-    throw new Error("Unlock Kagelin before connecting a calendar");
-  }
-
   const calendars = await Promise.all(
-    picked.map(async (calendar) => ({
-      remote_calendar_id: calendar.url,
-      name: await encryptField(key, calendar.displayName),
-      color: calendar.color,
-    })),
+    picked.map(async (calendar) => {
+      const { name } = (await encryptPayload("external_calendars", {
+        name: calendar.displayName,
+      })) as { name: string };
+      return {
+        remote_calendar_id: calendar.url,
+        name,
+        color: calendar.color,
+      };
+    }),
   );
 
   const res = await fetch("/api/calendar/calendars", {

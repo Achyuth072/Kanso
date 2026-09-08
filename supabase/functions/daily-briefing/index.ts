@@ -86,15 +86,14 @@ serve(async (req: Request) => {
           profile?.settings?.notifications?.evening_plan ?? true;
         if (!isEnabled) continue;
 
-        const { data: eveningTasks } = await supabaseAdmin
+        const { count: eveningCount } = await supabaseAdmin
           .from("tasks")
-          .select("id")
+          .select("id", { count: "exact", head: true })
           .eq("user_id", user.id)
           .eq("is_completed", false)
-          .eq("is_evening", true)
-          .limit(5);
+          .eq("is_evening", true);
 
-        const taskCount = eveningTasks?.length || 0;
+        const taskCount = eveningCount || 0;
         if (taskCount === 0) continue;
 
         const body = `You have ${taskCount} tasks set for tonight. Ready to wrap up?`;
