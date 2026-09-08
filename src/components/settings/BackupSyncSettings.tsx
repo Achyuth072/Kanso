@@ -71,7 +71,7 @@ function EnvelopeWarning() {
   return (
     <div
       role="alert"
-      className="flex gap-2.5 text-xs text-amber-700 dark:text-amber-500 bg-amber-500/10 border border-amber-500/25 rounded-lg p-3.5"
+      className="flex gap-2.5 text-xs text-destructive-surface-foreground bg-destructive-surface border border-destructive-surface-border rounded-lg p-3.5"
     >
       <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
       <p>

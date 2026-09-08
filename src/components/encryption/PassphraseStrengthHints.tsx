@@ -16,7 +16,7 @@ export function PassphraseStrengthHints({
         </p>
       )}
       {!tooShort && weak && (
-        <p className="text-xs text-amber-600 dark:text-amber-500">
+        <p className="text-xs text-foreground">
           This passphrase is easy to guess. You can still use it, but a longer,
           more varied one is safer.
         </p>
