@@ -369,7 +369,15 @@ export function SettingsClient({ version }: SettingsClientProps) {
                     <NotificationSettings />
 
                     <PwaInstallRow />
+                  </div>
+                </section>
 
+                <section className="space-y-4">
+                  <div>
+                    <h2 className="type-h3">Privacy &amp; Diagnostics</h2>
+                  </div>
+
+                  <div className="space-y-3">
                     <PrivacySection />
 
                     <DiagnosticExportSettings />
