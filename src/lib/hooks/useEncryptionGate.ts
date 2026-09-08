@@ -6,7 +6,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { getEncryptionKeyRow } from "@/lib/crypto/keyManager";
 import { keyStore } from "@/lib/crypto/keyStore";
 import { purgeDeviceContent } from "@/lib/crypto/purge";
-import { getIdleMs } from "@/lib/crypto/autoLock";
+import { getIdleMs, recordActivity } from "@/lib/crypto/autoLock";
 import { useAutoLockTimer } from "@/lib/hooks/useAutoLockTimer";
 import { useUiStore } from "@/lib/store/uiStore";
 
@@ -92,6 +92,7 @@ export function useEncryptionGate(): {
   }, [user, authLoading, notApplicable, version, queryClient]);
 
   const recheck = useCallback(() => {
+    recordActivity();
     setAsyncStatus("loading");
     setVersion((v) => v + 1);
   }, []);

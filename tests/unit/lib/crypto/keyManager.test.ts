@@ -68,6 +68,11 @@ vi.mock("@/lib/crypto/keyStore", () => ({
   },
 }));
 
+const recordActivityMock = vi.fn();
+vi.mock("@/lib/crypto/autoLock", () => ({
+  recordActivity: () => recordActivityMock(),
+}));
+
 const rowCache = new Map<string, Row>();
 vi.mock("@/lib/crypto/encryptionKeyRowCache", () => ({
   encryptionKeyRowCache: {
@@ -289,5 +294,29 @@ describe("keyManager", () => {
     expect((await getEncryptionKeyRow(USER_ID))?.migrated_at).toEqual(
       expect.any(String),
     );
+  }, 20000);
+  it("restarts the idle clock whenever the master key is cached on the device", async () => {
+    const { recoveryCode } = await setupEncryption(USER_ID, "first passphrase");
+    expect(recordActivityMock).toHaveBeenCalledTimes(1);
+
+    await unlockWithPassphrase(USER_ID, "first passphrase");
+    expect(recordActivityMock).toHaveBeenCalledTimes(2);
+
+    await unlockWithRecoveryCode(USER_ID, recoveryCode);
+    expect(recordActivityMock).toHaveBeenCalledTimes(3);
+
+    await changePassphrase(USER_ID, "first passphrase", "second passphrase");
+    expect(recordActivityMock).toHaveBeenCalledTimes(4);
+  }, 30000);
+
+  it("leaves the idle clock alone when unlocking fails", async () => {
+    await setupEncryption(USER_ID, "first passphrase");
+    recordActivityMock.mockClear();
+
+    await expect(
+      unlockWithPassphrase(USER_ID, "wrong passphrase"),
+    ).rejects.toThrow(UnlockError);
+
+    expect(recordActivityMock).not.toHaveBeenCalled();
   }, 20000);
 });

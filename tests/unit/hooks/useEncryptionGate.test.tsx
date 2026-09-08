@@ -33,8 +33,10 @@ vi.mock("@/lib/store/uiStore", () => ({
 }));
 
 const getIdleMsMock = vi.fn(() => 0);
+const recordActivityMock = vi.fn();
 vi.mock("@/lib/crypto/autoLock", () => ({
   getIdleMs: () => getIdleMsMock(),
+  recordActivity: () => recordActivityMock(),
 }));
 
 vi.mock("@/lib/hooks/useAutoLockTimer", () => ({
@@ -209,5 +211,26 @@ describe("useEncryptionGate", () => {
 
     await waitFor(() => expect(result.current.status).toBe("unlocked"));
     expect(purgeDeviceContentMock).not.toHaveBeenCalled();
+  });
+  it("recheck restarts the idle clock, so finishing a gate screen doesn't immediately re-lock", async () => {
+    getEncryptionKeyRowMock.mockResolvedValue({
+      migrated_at: "2026-09-04T00:00:00Z",
+    });
+    keyStoreLoadMock.mockResolvedValue(new Uint8Array([1, 2, 3]));
+    uiState.autoLockEnabled = true;
+    uiState.autoLockMinutes = 30;
+    getIdleMsMock.mockReturnValue(31 * 60_000);
+    recordActivityMock.mockImplementation(() =>
+      getIdleMsMock.mockReturnValue(0),
+    );
+
+    const { result } = renderHook(() => useEncryptionGate(), {
+      wrapper: ({ children }) => withQueryClient(children),
+    });
+    await waitFor(() => expect(result.current.status).toBe("needs-unlock"));
+
+    act(() => result.current.recheck());
+
+    await waitFor(() => expect(result.current.status).toBe("unlocked"));
   });
 });

@@ -17,8 +17,14 @@ import {
   type EncryptionKeyRow,
 } from "@/lib/crypto/encryptionKeyRowCache";
 import { findPendingRows } from "@/lib/crypto/backfillMigration";
+import { recordActivity } from "@/lib/crypto/autoLock";
 
 export class UnlockError extends Error {}
+
+async function cacheMasterKey(masterKey: Uint8Array): Promise<void> {
+  await keyStore.save(masterKey);
+  recordActivity();
+}
 
 async function fetchEncryptionKeyRow(
   userId: string,
@@ -109,7 +115,7 @@ export async function setupEncryption(
   });
   if (error) throw error;
 
-  await keyStore.save(masterKey);
+  await cacheMasterKey(masterKey);
 
   return { recoveryCode: recoveryCode.formatted };
 }
@@ -137,7 +143,7 @@ export async function unlockWithPassphrase(
     throw new UnlockError("That passphrase isn't right.");
   }
 
-  await keyStore.save(masterKey);
+  await cacheMasterKey(masterKey);
   return masterKey;
 }
 
@@ -164,7 +170,7 @@ export async function unlockWithRecoveryCode(
     throw new UnlockError("That recovery code isn't right.");
   }
 
-  await keyStore.save(masterKey);
+  await cacheMasterKey(masterKey);
   return masterKey;
 }
 
@@ -214,7 +220,7 @@ export async function changePassphrase(
   // subsequent offline unlock would fall back to the old passphrase's row.
   await fetchEncryptionKeyRow(userId);
 
-  await keyStore.save(masterKey);
+  await cacheMasterKey(masterKey);
 }
 
 export async function reissueRecoveryCode(userId: string): Promise<string> {
