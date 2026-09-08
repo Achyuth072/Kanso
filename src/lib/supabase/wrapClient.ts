@@ -8,8 +8,7 @@ import {
 } from "@/lib/crypto/contentCipher";
 import { FIELD_MAP, JSON_FIELDS, type FieldMap } from "@/lib/supabase/fieldMap";
 
-// Intercepts `.from(...)` queries only — `.channel` and `.rpc` calls bypass
-// the encryption/decryption below.
+// Intercepts `.from(...)` queries only; `.channel` and `.rpc` bypass encryption.
 export function wrapSupabaseClient<T extends SupabaseClient>(
   client: T,
   fieldMap: FieldMap = FIELD_MAP,
@@ -103,9 +102,13 @@ async function encryptPayload(
 
   const key = await getContentKey();
   if (!key) {
-    throw new Error(
-      `Cannot write to "${table}": content encryption is set up for this ` +
-        "account but the master key is unavailable (locked, or not yet unlocked on this device).",
+    throw Object.assign(
+      new Error(
+        `Cannot write to "${table}": content encryption is set up for this ` +
+          "account but the master key is unavailable (locked, or not yet unlocked on this device).",
+      ),
+      // describeError() drops .message; .code allows callers to detect locked state.
+      { code: "content_key_unavailable" },
     );
   }
 
@@ -133,9 +136,12 @@ async function decryptRow(
       const value = out[field];
       if (isCiphertext(value)) {
         if (!key) {
-          throw new Error(
-            `Cannot read "${table}": content encryption is set up for this ` +
-              "account but the master key is unavailable (locked, or not yet unlocked on this device).",
+          throw Object.assign(
+            new Error(
+              `Cannot read "${table}": content encryption is set up for this ` +
+                "account but the master key is unavailable (locked, or not yet unlocked on this device).",
+            ),
+            { code: "content_key_unavailable" },
           );
         }
         if (out === row) out = { ...row };
@@ -147,8 +153,7 @@ async function decryptRow(
     }
   }
 
-  // Embedded selects nest joined rows under the relation name; recurse so
-  // their encrypted fields get decrypted too.
+  // Recurse into embedded joins so joined encrypted fields are decrypted.
   for (const [column, value] of Object.entries(out)) {
     if (Array.isArray(value)) {
       if (!value.some(isPlainObject)) continue;
@@ -214,8 +219,7 @@ function wrapFilterBuilder(
   return proxy;
 }
 
-// insert/update/upsert must await encryption before the real builder call can
-// be made, so chained calls are queued here and replayed once it resolves.
+// Queues chained builder calls while awaiting encryption before delegating to PostgREST.
 function wrapPendingBuilder(
   table: string,
   fieldMap: FieldMap,

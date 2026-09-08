@@ -16,6 +16,16 @@ import {
 } from "./adapter-interface";
 import { computePullMutations, type PullMutations } from "./pull-merge";
 
+// describeError() drops .message; inspect code to preserve actionable locked status.
+function describeSyncError(e: unknown): string {
+  const code =
+    e && typeof e === "object" ? (e as { code?: unknown }).code : undefined;
+  if (code === "content_key_unavailable") {
+    return "Content is locked — unlock the app to sync";
+  }
+  return describeError(e);
+}
+
 export async function syncExternalCalendar(
   calendarId: string,
   config: Partial<SyncAdapterConfig> = {},
@@ -75,8 +85,7 @@ export async function syncExternalCalendar(
       newSyncToken = full.syncToken;
     }
 
-    // Must fetch the complete set: computePullMutations keys locals by remote_id,
-    // so any omitted row would be mistaken for new and duplicated in toCreate.
+    // Fetch all rows: computePullMutations keys by remote_id, so omitted rows would duplicate.
     const localEvents = await fetchAllRows<CalendarEvent>((from, to) =>
       supabase
         .from("calendar_events")
@@ -126,7 +135,7 @@ export async function syncExternalCalendar(
       last_sync_at: new Date().toISOString(),
     });
   } catch (e: unknown) {
-    const descriptor = describeError(e);
+    const descriptor = describeSyncError(e);
     result.errors.push(descriptor);
     await updateCalendarStatus(calendarId, {
       sync_status: "error",
@@ -184,7 +193,6 @@ export async function pushPendingEvents(
         etag = updated.etag;
       }
 
-      // Drain rule: clear sync_state only if updated_at is unchanged
       const { count } = await supabase
         .from("calendar_events")
         .update(
@@ -195,7 +203,7 @@ export async function pushPendingEvents(
         .eq("updated_at", event.updated_at);
 
       if (count === 0) {
-        // Concurrent edit advanced updated_at — keep pending_update so it re-pushes
+        // Concurrent edit advanced updated_at; keep pending_update to re-push.
         await supabase
           .from("calendar_events")
           .update({ remote_id: remoteId, etag, sync_state: "pending_update" })
@@ -204,7 +212,7 @@ export async function pushPendingEvents(
 
       result.pushed++;
     } catch (e: unknown) {
-      result.errors.push(`Failed to push ${event.id}: ${describeError(e)}`);
+      result.errors.push(`Failed to push ${event.id}: ${describeSyncError(e)}`);
     }
   }
 
@@ -223,10 +231,7 @@ export async function applyPullMutations(
     errors: [] as string[],
   };
 
-  // Inserts — dedup against remote_ids this user already owns. A live match in
-  // another calendar is a genuine duplicate (skip); an archived match is an
-  // orphan left by a disconnect, so revive it into this calendar rather than
-  // dropping it (otherwise reconnect pulls nothing and events stay hidden).
+  // Dedup across user's calendars: skip existing events, but revive archived orphans from disconnects.
   if (mutations.toCreate.length > 0) {
     const remoteIds = mutations.toCreate
       .map((item) => item.remote_id)
@@ -282,7 +287,7 @@ export async function applyPullMutations(
       const { error } = await supabase.from("calendar_events").insert(rows);
       if (error) {
         result.errors.push(
-          `Failed to batch-create events: ${describeError(error)}`,
+          `Failed to batch-create events: ${describeSyncError(error)}`,
         );
       } else {
         result.created += rows.length;
@@ -300,7 +305,9 @@ export async function applyPullMutations(
           })
           .eq("id", id);
         if (error)
-          result.errors.push(`Failed to revive ${id}: ${describeError(error)}`);
+          result.errors.push(
+            `Failed to revive ${id}: ${describeSyncError(error)}`,
+          );
         else result.created++;
       }),
     );
@@ -318,7 +325,7 @@ export async function applyPullMutations(
         .eq("id", item.id);
       if (error)
         result.errors.push(
-          `Failed to update ${item.id}: ${describeError(error)}`,
+          `Failed to update ${item.id}: ${describeSyncError(error)}`,
         );
       else result.updated++;
     }),
@@ -331,7 +338,7 @@ export async function applyPullMutations(
       .in("id", mutations.toArchive);
     if (error)
       result.errors.push(
-        `Failed to batch-archive events: ${describeError(error)}`,
+        `Failed to batch-archive events: ${describeSyncError(error)}`,
       );
     else result.archived += mutations.toArchive.length;
   }
@@ -343,7 +350,7 @@ export async function applyPullMutations(
       .in("id", mutations.toHardDelete);
     if (error)
       result.errors.push(
-        `Failed to batch-delete events: ${describeError(error)}`,
+        `Failed to batch-delete events: ${describeSyncError(error)}`,
       );
   }
 
@@ -359,7 +366,7 @@ export async function applyPullMutations(
         .eq("id", item.id);
       if (error)
         result.errors.push(
-          `Failed to adopt ${item.id}: ${describeError(error)}`,
+          `Failed to adopt ${item.id}: ${describeSyncError(error)}`,
         );
     }),
   );
