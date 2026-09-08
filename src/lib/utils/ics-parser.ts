@@ -6,10 +6,6 @@ export interface ParsedICSResult {
   errors: string[];
 }
 
-/**
- * Parse ICS content into CreateCalendarEventInput objects using ical.js (browser-compatible)
- * Handles RFC 5545 compliant .ics files
- */
 export function parseICS(icsContent: string): ParsedICSResult {
   const events: CreateCalendarEventInput[] = [];
   const errors: string[] = [];
@@ -29,7 +25,6 @@ export function parseICS(icsContent: string): ParsedICSResult {
           return;
         }
 
-        // ical.js endDate might be missing, default to 1h after start
         let end = event.endDate;
         if (!end) {
           const duration = new ICAL.Duration({ hours: 1 });
@@ -44,8 +39,10 @@ export function parseICS(icsContent: string): ParsedICSResult {
           start_time: start.toJSDate().toISOString(),
           end_time: end.toJSDate().toISOString(),
           all_day: start.isDate,
+          // Dedup key must stay queryable, so it goes in the ics_uid column —
+          // metadata is encrypted at rest and unreadable server-side.
+          ics_uid: event.uid || null,
           metadata: {
-            ics_uid: event.uid,
             imported_at: new Date().toISOString(),
           },
         };
@@ -66,9 +63,6 @@ export function parseICS(icsContent: string): ParsedICSResult {
   return { events, errors };
 }
 
-/**
- * Parse ICS file from File object (for browser file input)
- */
 export async function parseICSFile(file: File): Promise<ParsedICSResult> {
   const content = await file.text();
   return parseICS(content);

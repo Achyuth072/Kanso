@@ -24,7 +24,7 @@ END:VCALENDAR`;
     expect(events[0].location).toBe("London");
     expect(new Date(events[0].start_time).getUTCFullYear()).toBe(2026);
     expect(events[0].all_day).toBe(false);
-    expect(events[0].metadata?.ics_uid).toBe("123@kanso");
+    expect(events[0].ics_uid).toBe("123@kanso");
   });
 
   test("detects all-day events", () => {
@@ -68,6 +68,5 @@ END:VCALENDAR`;
     const ics = "This is not an ICS file";
     const { events } = parseICS(ics);
     expect(events).toHaveLength(0);
-    // Note: node-ical doesn't always throw for random text, it just returns an empty object.
   });
 });

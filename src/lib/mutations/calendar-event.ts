@@ -15,7 +15,6 @@ export const calendarEventMutations = {
       localStorage.getItem("kanso_guest_mode") === "true";
 
     if (isGuest) {
-      // Guest mode: store in mockStore stub
       const event: CalendarEvent = {
         id: input._clientId || crypto.randomUUID(),
         user_id: "guest",
@@ -31,7 +30,7 @@ export const calendarEventMutations = {
         remote_id: null,
         remote_calendar_id: null,
         etag: null,
-        ics_uid: null,
+        ics_uid: input.ics_uid || null,
         sync_state: null,
         is_archived: false,
         metadata: input.metadata || {},
@@ -84,6 +83,7 @@ export const calendarEventMutations = {
         color: input.color || "#4B6CB7",
         category: input.category || null,
         recurrence_rule: input.recurrence_rule || null,
+        ics_uid: input.ics_uid || null,
         remote_calendar_id: remoteCalendarId,
         sync_state: syncState,
         metadata: input.metadata || {},
@@ -107,7 +107,6 @@ export const calendarEventMutations = {
 
     const supabase = createClient();
 
-    // Fetch current sync_state to apply the CRUD transition
     const { data: current } = await supabase
       .from("calendar_events")
       .select("sync_state, remote_calendar_id")
@@ -140,7 +139,6 @@ export const calendarEventMutations = {
 
     const supabase = createClient();
 
-    // Fetch current sync_state and remote_calendar_id to apply CRUD transition
     const { data: current } = await supabase
       .from("calendar_events")
       .select("sync_state, remote_calendar_id")
@@ -159,7 +157,6 @@ export const calendarEventMutations = {
           .eq("id", id);
         if (error) throw new Error(error.message);
       } else {
-        // Queue for remote deletion on next sync
         const { error } = await supabase
           .from("calendar_events")
           .update({ sync_state: newState })

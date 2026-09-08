@@ -1,43 +1,22 @@
-/**
- * Calendar Event Types
- * Matches supabase calendar_events table schema
- */
-
 export interface CalendarEvent {
   id: string;
   user_id: string;
-
-  // Core Event Fields
   title: string;
   description: string | null;
   location: string | null;
-  start_time: string; // ISO string from DB
-  end_time: string; // ISO string from DB
+  start_time: string;
+  end_time: string;
   all_day: boolean;
-
-  // Categorization
   color: string;
   category: string | null;
-
-  // Recurrence
   recurrence_rule: string | null;
-
-  // Sync Metadata
   remote_id: string | null;
   remote_calendar_id: string | null;
   etag: string | null;
   ics_uid: string | null;
-
-  // Offline-first CRUD queue
   sync_state: "pending_create" | "pending_update" | "pending_delete" | null;
-
-  // Soft Deletion
   is_archived: boolean;
-
-  // Flexible Metadata
   metadata: Record<string, unknown>;
-
-  // Timestamps
   created_at: string;
   updated_at: string;
 }
@@ -46,12 +25,13 @@ export interface CreateCalendarEventInput {
   title: string;
   description?: string;
   location?: string;
-  start_time: string; // ISO string
-  end_time: string; // ISO string
+  start_time: string;
+  end_time: string;
   all_day?: boolean;
   color?: string;
   category?: string;
   recurrence_rule?: string;
+  ics_uid?: string | null;
   metadata?: Record<string, unknown>;
 }
 
@@ -70,10 +50,6 @@ export interface UpdateCalendarEventInput {
   metadata?: Record<string, unknown>;
 }
 
-/**
- * UI-ready event type with Date objects (for calendar rendering)
- * Used by calendar engine and components
- */
 export interface CalendarEventUI {
   id: string;
   title: string;
@@ -88,9 +64,6 @@ export interface CalendarEventUI {
   metadata?: Record<string, unknown>;
 }
 
-/**
- * Transform DB event to UI event
- */
 export function toCalendarEventUI(event: CalendarEvent): CalendarEventUI {
   return {
     id: event.id,
