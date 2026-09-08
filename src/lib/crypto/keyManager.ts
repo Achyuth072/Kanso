@@ -41,8 +41,7 @@ async function fetchEncryptionKeyRow(
     if (row) await encryptionKeyRowCache.save(userId, row);
     return row;
   } catch (err) {
-    // Unlocking (a Locked app, or a reload with no connectivity) must work
-    // offline — fall back to whatever was cached on an earlier online fetch.
+    // Fall back to offline cache so unlocking works without connectivity.
     const cached = await encryptionKeyRowCache.load(userId);
     if (cached) return cached;
     throw err;
@@ -69,7 +68,7 @@ export async function markMigrationComplete(userId: string): Promise<void> {
     .single();
   if (error) throw error;
 
-  // Direct cache update avoids fetchEncryptionKeyRow's fallback to stale cache on network drop.
+  // Direct cache update avoids falling back to stale cache on network drop.
   await encryptionKeyRowCache.save(userId, data as EncryptionKeyRow);
 }
 
@@ -206,19 +205,20 @@ export async function changePassphrase(
   const newWrapped = await wrapMasterKey(masterKey, newDerivedKey);
 
   const supabase = createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("encryption_keys")
     .update({
       passphrase_salt: await bytesToBase64(newSalt),
       passphrase_kdf_params: DEFAULT_ARGON2_PARAMS,
       wrapped_key_passphrase: newWrapped,
     })
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .select()
+    .single();
   if (error) throw error;
 
-  // Re-fetch so the offline cache reflects the new wrap — otherwise a
-  // subsequent offline unlock would fall back to the old passphrase's row.
-  await fetchEncryptionKeyRow(userId);
+  // Direct cache update prevents offline unlock from falling back to old passphrase wrap.
+  await encryptionKeyRowCache.save(userId, data as EncryptionKeyRow);
 
   await cacheMasterKey(masterKey);
 }
@@ -238,19 +238,20 @@ export async function reissueRecoveryCode(userId: string): Promise<string> {
   const wrapped = await wrapMasterKey(masterKey, recoveryKey);
 
   const supabase = createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("encryption_keys")
     .update({
       recovery_salt: await bytesToBase64(recoverySalt),
       recovery_kdf_params: DEFAULT_ARGON2_PARAMS,
       wrapped_key_recovery: wrapped,
     })
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .select()
+    .single();
   if (error) throw error;
 
-  // Re-fetch so the offline cache reflects the new code — otherwise the
-  // invalidated one would still unwrap the key while offline.
-  await fetchEncryptionKeyRow(userId);
+  // Direct cache update ensures the invalidated recovery code cannot unwrap offline.
+  await encryptionKeyRowCache.save(userId, data as EncryptionKeyRow);
 
   return recoveryCode.formatted;
 }
