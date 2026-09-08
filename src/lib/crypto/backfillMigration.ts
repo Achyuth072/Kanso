@@ -67,7 +67,6 @@ export async function findPendingRows(userId: string): Promise<PendingRow[]> {
 // Evening and briefing notifications never carry user content (ADR 0016).
 const CONTENT_NOTIFICATION_TYPES = ["due_date", "do_date", "timer_end"];
 
-// Pre-migration queue rows contain unencrypted task content in payload.body.
 async function cancelLegacyPlaintextNotifications(
   userId: string,
 ): Promise<void> {
@@ -131,19 +130,22 @@ export async function runBackfillMigration(
   const total = pending.length;
   onProgress?.({ done: 0, total, table: pending[0]?.table ?? "" });
 
-  for (let i = 0; i < pending.length; i++) {
-    const { table, id, updatedAt, row } = pending[i];
+  const CONCURRENCY = 10;
+  let done = 0;
+
+  const migrateRow = async ({ table, id, updatedAt, row }: PendingRow) => {
     const fields = FIELD_MAP[table];
     const patch: Record<string, string> = {};
-
-    for (const field of fields) {
-      const value = row[field];
-      if (!needsEncryption(table, field, value)) continue;
-      const plaintext = isJsonField(table, field)
-        ? JSON.stringify(value)
-        : (value as string);
-      patch[field] = await encryptField(masterKey, plaintext);
-    }
+    await Promise.all(
+      fields.map(async (field) => {
+        const value = row[field];
+        if (!needsEncryption(table, field, value)) return;
+        const plaintext = isJsonField(table, field)
+          ? JSON.stringify(value)
+          : (value as string);
+        patch[field] = await encryptField(masterKey, plaintext);
+      }),
+    );
 
     // Avoid overwriting concurrent writes with stale ciphertext.
     let query = (raw.from(table) as any)
@@ -153,13 +155,18 @@ export async function runBackfillMigration(
     if (updatedAt !== null) query = query.eq("updated_at", updatedAt);
     const { data, error } = await query;
     if (error) throw error;
-    // Row changed concurrently and remains plaintext; fail loudly so retry picks it up.
     if (!data || data.length === 0) {
       throw new Error(
         `Migration conflict: ${table} row ${id} changed during migration. Retrying will pick it up.`,
       );
     }
 
-    onProgress?.({ done: i + 1, total, table });
+    done++;
+    onProgress?.({ done, total, table });
+  };
+
+  for (let i = 0; i < pending.length; i += CONCURRENCY) {
+    const batch = pending.slice(i, i + CONCURRENCY);
+    await Promise.all(batch.map(migrateRow));
   }
 }

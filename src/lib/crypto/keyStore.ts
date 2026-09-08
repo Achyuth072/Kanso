@@ -8,15 +8,22 @@ export interface KeyStore {
   clear(): Promise<void>;
 }
 
+// undefined: not yet loaded; null: no key stored.
+let cached: Uint8Array | null | undefined;
+
 export const keyStore: KeyStore = {
   async load() {
-    const value = await get<Uint8Array>(MASTER_KEY_STORAGE_KEY);
-    return value ?? null;
+    if (cached === undefined) {
+      cached = (await get<Uint8Array>(MASTER_KEY_STORAGE_KEY)) ?? null;
+    }
+    return cached;
   },
   async save(key) {
     await set(MASTER_KEY_STORAGE_KEY, key);
+    cached = key;
   },
   async clear() {
     await del(MASTER_KEY_STORAGE_KEY);
+    cached = null;
   },
 };

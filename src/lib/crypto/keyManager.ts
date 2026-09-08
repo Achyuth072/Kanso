@@ -41,7 +41,6 @@ async function fetchEncryptionKeyRow(
     if (row) await encryptionKeyRowCache.save(userId, row);
     return row;
   } catch (err) {
-    // Fall back to offline cache so unlocking works without connectivity.
     const cached = await encryptionKeyRowCache.load(userId);
     if (cached) return cached;
     throw err;
@@ -68,7 +67,6 @@ export async function markMigrationComplete(userId: string): Promise<void> {
     .single();
   if (error) throw error;
 
-  // Direct cache update avoids falling back to stale cache on network drop.
   await encryptionKeyRowCache.save(userId, data as EncryptionKeyRow);
 }
 
@@ -82,20 +80,20 @@ export async function setupEncryption(
 ): Promise<SetupEncryptionResult> {
   const masterKey = await generateMasterKey();
 
-  const passphraseSalt = await generateSalt();
-  const passphraseKey = await deriveKeyFromPassphrase(
-    passphrase,
-    passphraseSalt,
-  );
-  const wrappedByPassphrase = await wrapMasterKey(masterKey, passphraseKey);
+  const [passphraseSalt, recoveryCode, recoverySalt] = await Promise.all([
+    generateSalt(),
+    generateRecoveryCode(),
+    generateSalt(),
+  ]);
 
-  const recoveryCode = await generateRecoveryCode();
-  const recoverySalt = await generateSalt();
-  const recoveryKey = await deriveKeyFromPassphrase(
-    recoveryCode.raw,
-    recoverySalt,
-  );
-  const wrappedByRecovery = await wrapMasterKey(masterKey, recoveryKey);
+  const [wrappedByPassphrase, wrappedByRecovery] = await Promise.all([
+    deriveKeyFromPassphrase(passphrase, passphraseSalt).then((key) =>
+      wrapMasterKey(masterKey, key),
+    ),
+    deriveKeyFromPassphrase(recoveryCode.raw, recoverySalt).then((key) =>
+      wrapMasterKey(masterKey, key),
+    ),
+  ]);
 
   // Accounts with pre-existing plaintext must backfill before being marked migrated.
   const pending = await findPendingRows(userId);
@@ -217,7 +215,7 @@ export async function changePassphrase(
     .single();
   if (error) throw error;
 
-  // Direct cache update prevents offline unlock from falling back to old passphrase wrap.
+  // Prevent old passphrase from unlocking offline.
   await encryptionKeyRowCache.save(userId, data as EncryptionKeyRow);
 
   await cacheMasterKey(masterKey);
@@ -250,7 +248,7 @@ export async function reissueRecoveryCode(userId: string): Promise<string> {
     .single();
   if (error) throw error;
 
-  // Direct cache update ensures the invalidated recovery code cannot unwrap offline.
+  // Prevent invalidated recovery code from unlocking offline.
   await encryptionKeyRowCache.save(userId, data as EncryptionKeyRow);
 
   return recoveryCode.formatted;

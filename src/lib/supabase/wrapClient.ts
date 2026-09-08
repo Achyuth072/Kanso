@@ -143,29 +143,32 @@ async function decryptRow(
   let out: Record<string, unknown> = row;
   const fields = fieldMap[table];
   if (fields?.length) {
-    const key = await loadKey();
-    for (const field of fields) {
-      const value = out[field];
-      if (isCiphertext(value)) {
-        if (!key) {
-          throw Object.assign(
-            new Error(
-              `Cannot read "${table}": content encryption is set up for this ` +
-                "account but the master key is unavailable (locked, or not yet unlocked on this device).",
-            ),
-            { code: CONTENT_KEY_UNAVAILABLE_CODE },
-          );
-        }
-        if (out === row) out = { ...row };
-        const plaintext = await decryptField(key, value);
-        out[field] = isJsonField(table, field)
-          ? JSON.parse(plaintext)
-          : plaintext;
+    const encryptedFields = fields.filter((field) => isCiphertext(out[field]));
+    if (encryptedFields.length) {
+      const key = await loadKey();
+      if (!key) {
+        throw Object.assign(
+          new Error(
+            `Cannot read "${table}": content encryption is set up for this ` +
+              "account but the master key is unavailable (locked, or not yet unlocked on this device).",
+          ),
+          { code: CONTENT_KEY_UNAVAILABLE_CODE },
+        );
       }
+      const decrypted = await Promise.all(
+        encryptedFields.map(async (field) => {
+          const plaintext = await decryptField(key, out[field] as string);
+          return [
+            field,
+            isJsonField(table, field) ? JSON.parse(plaintext) : plaintext,
+          ] as const;
+        }),
+      );
+      out = { ...row };
+      for (const [field, value] of decrypted) out[field] = value;
     }
   }
 
-  // Recurse into embedded joins so joined encrypted fields are decrypted.
   for (const [column, value] of Object.entries(out)) {
     if (Array.isArray(value)) {
       if (!value.some(isPlainObject)) continue;
@@ -231,7 +234,7 @@ function wrapFilterBuilder(
   return proxy;
 }
 
-// Queues chained builder calls while awaiting encryption before delegating to PostgREST.
+// PostgREST chaining is synchronous, but payload encryption is async.
 function wrapPendingBuilder(
   table: string,
   fieldMap: FieldMap,
