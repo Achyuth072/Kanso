@@ -15,30 +15,24 @@ export interface GoalsState {
 }
 
 interface UiState {
-  // Sidebar State
   isProjectsOpen: boolean;
   toggleProjectsOpen: () => void;
 
-  // Task List State
   sortBy: SortOption;
   groupBy: GroupOption;
   viewMode: TaskViewMode;
   setSortBy: (sort: SortOption) => void;
   setGroupBy: (group: GroupOption) => void;
   setViewMode: (mode: TaskViewMode) => void;
-  // Set by TaskList/TaskBoard's drag handlers so the day_order-freeze effect
-  // can skip drag-driven sortBy switches — the drag path bakes its own order.
+  // Set by drag handlers so the day_order-freeze effect skips drag-driven sortBy switches.
   customSortEnteredViaDrag: boolean;
   setCustomSortEnteredViaDrag: (value: boolean) => void;
 
-  // Habit List State
   habitViewMode: "grid" | "compact";
   setHabitViewMode: (mode: "grid" | "compact") => void;
 
-  // Global Stats Page State
   statsPeriod: StatsPeriod;
   setStatsPeriod: (period: StatsPeriod) => void;
-  // Global Settings
   timeFormat: "12h" | "24h" | "system";
   setTimeFormat: (format: "12h" | "24h" | "system") => void;
   hapticsEnabled: boolean;
@@ -54,47 +48,39 @@ interface UiState {
   autoLockMinutes: number;
   setAutoLockMinutes: (minutes: number) => void;
 
-  // Global Goals (aggregate targets, not per-item — see CONTEXT.md "Goals")
+  // Aggregate targets, not per-item (see CONTEXT.md "Goals").
   goals: GoalsState;
   setGoals: (goals: Partial<GoalsState>) => void;
 
-  // Shortcuts Help Dialog
   isShortcutsHelpOpen: boolean;
   setShortcutsHelpOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
 
-  // PIP State (for cross-hook communication)
   isPipActive: boolean;
   setIsPipActive: (active: boolean) => void;
 
-  // Fullscreen State (for cross-hook communication, D-09 mutual exclusion)
   isFullscreen: boolean;
   setIsFullscreen: (fullscreen: boolean) => void;
 
-  // Sync State (for sync indicator, D-04)
   isSynced: boolean;
   setIsSynced: (synced: boolean) => void;
 
-  // Archived Projects Dialog
   isArchivedProjectsOpen: boolean;
   setArchivedProjectsOpen: (open: boolean) => void;
 
-  // Task Selection State (for component decoupling per PERF-02)
   selectedTaskId: string | null;
   setSelectedTaskId: (id: string | null) => void;
   editingTaskId: string | null;
   setEditingTaskId: (id: string | null) => void;
 
-  // Environment State (Non-persistent)
   isDesktop: boolean;
   setIsDesktop: (isDesktop: boolean) => void;
-  // Changelog state
   isChangelogOpen: boolean;
   setChangelogOpen: (open: boolean) => void;
   lastSeenVersion: string;
   setLastSeenVersion: (version: string) => void;
   lastDismissedVersion: string;
   setLastDismissedVersion: (version: string) => void;
-  // Ephemeral: true when server has a version newer than lastDismissedVersion
+  // True when server has a version newer than lastDismissedVersion.
   hasChangelogUpdate: boolean;
   setHasChangelogUpdate: (has: boolean) => void;
 
@@ -102,13 +88,10 @@ interface UiState {
   setLastUndoAction: (action: (() => void | Promise<void>) | null) => void;
   triggerLastUndoAction: () => void | Promise<void>;
 
-  // Id of the task yanked via vim `yy`, resolved against TanStack Query's
-  // task cache at paste time rather than snapshotted here — the snapshot
-  // would otherwise go stale if the task is edited between yank and paste.
+  // Yanked task ID resolved against cache at paste time to avoid stale data.
   yankedTaskId: string | null;
   setYankedTaskId: (id: string | null) => void;
 
-  // Hydration state
   _hasHydrated: boolean;
   setHasHydrated: (state: boolean) => void;
 }
@@ -116,12 +99,10 @@ interface UiState {
 export const useUiStore = create<UiState>()(
   persist(
     (set, get) => ({
-      // Sidebar defaults
       isProjectsOpen: true,
       toggleProjectsOpen: () =>
         set((state) => ({ isProjectsOpen: !state.isProjectsOpen })),
 
-      // Task List defaults
       sortBy: "date",
       groupBy: "none",
       viewMode: "list",
@@ -132,15 +113,12 @@ export const useUiStore = create<UiState>()(
       setCustomSortEnteredViaDrag: (value) =>
         set({ customSortEnteredViaDrag: value }),
 
-      // Habit List defaults
       habitViewMode: "grid",
       setHabitViewMode: (mode) => set({ habitViewMode: mode }),
 
-      // Global Stats Page defaults
       statsPeriod: "30d",
       setStatsPeriod: (period) => set({ statsPeriod: period }),
 
-      // Global Settings defaults
       timeFormat: "system",
       setTimeFormat: (format) => set({ timeFormat: format }),
       hapticsEnabled: true,
@@ -157,9 +135,10 @@ export const useUiStore = create<UiState>()(
       autoLockEnabled: false,
       setAutoLockEnabled: (enabled) => set({ autoLockEnabled: enabled }),
       autoLockMinutes: 60,
-      setAutoLockMinutes: (minutes) => set({ autoLockMinutes: minutes }),
+      // Clamp to prevent corrupted/stale values (<= 0) from continuously auto-locking.
+      setAutoLockMinutes: (minutes) =>
+        set({ autoLockMinutes: Math.max(1, minutes) }),
 
-      // Global Goals defaults
       goals: {
         dailyFocusHours: null,
         weeklyFocusHours: null,
@@ -168,7 +147,6 @@ export const useUiStore = create<UiState>()(
       },
       setGoals: (goals) => set((s) => ({ goals: { ...s.goals, ...goals } })),
 
-      // Shortcuts Help defaults
       isShortcutsHelpOpen: false,
       setShortcutsHelpOpen: (open) =>
         set((state) => ({
@@ -178,33 +156,26 @@ export const useUiStore = create<UiState>()(
               : open,
         })),
 
-      // PIP State defaults
       isPipActive: false,
       setIsPipActive: (active) => set({ isPipActive: active }),
 
-      // Fullscreen State defaults
       isFullscreen: false,
       setIsFullscreen: (fullscreen) => set({ isFullscreen: fullscreen }),
 
-      // Sync State defaults
       isSynced: false,
       setIsSynced: (synced) => set({ isSynced: synced }),
 
-      // Archived Projects defaults
       isArchivedProjectsOpen: false,
       setArchivedProjectsOpen: (open) => set({ isArchivedProjectsOpen: open }),
 
-      // Task Selection State defaults
       selectedTaskId: null,
       setSelectedTaskId: (id) => set({ selectedTaskId: id }),
       editingTaskId: null,
       setEditingTaskId: (id) => set({ editingTaskId: id }),
 
-      // Environment State defaults
-      isDesktop: true, // Default to true to avoid mobile layout flash during hydration
+      isDesktop: true, // Avoids mobile layout flash during hydration
       setIsDesktop: (isDesktop) => set({ isDesktop }),
 
-      // Changelog defaults
       isChangelogOpen: false,
       setChangelogOpen: (open) => set({ isChangelogOpen: open }),
       lastSeenVersion: "",
@@ -228,13 +199,12 @@ export const useUiStore = create<UiState>()(
       yankedTaskId: null,
       setYankedTaskId: (id) => set({ yankedTaskId: id }),
 
-      // Hydration
       _hasHydrated: false,
       setHasHydrated: (state) => set({ _hasHydrated: state }),
     }),
     {
       name: "kanso-ui-state",
-      // zustand only calls migrate() when this differs from the stored version.
+      // Zustand only calls migrate() when this differs from the stored version.
       version: 1,
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
@@ -243,7 +213,6 @@ export const useUiStore = create<UiState>()(
         }
       },
       partialize: (state) => {
-        // Exclude environment, hydration, and ephemeral runtime state from persistence
         const {
           isDesktop: _isDesktop,
           setIsDesktop: _setIsDesktop,
@@ -268,7 +237,7 @@ export const useUiStore = create<UiState>()(
       },
       migrate: (persistedState: unknown, _version: number) => {
         const state = persistedState as Record<string, unknown> | undefined;
-        // "split" and "grid" were both retired in favour of "list".
+        // "split" and "grid" were retired in favor of "list".
         if (RETIRED_VIEW_MODES.has(state?.viewMode as string)) {
           return { ...state, viewMode: "list" };
         }

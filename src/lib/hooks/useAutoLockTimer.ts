@@ -28,7 +28,8 @@ export function useAutoLockTimer(
       lastWrite = now;
       recordActivity();
     };
-    const thresholdMs = minutes * 60_000;
+    // Clamp to prevent corrupted/stale values (<= 0) from firing immediately.
+    const thresholdMs = Math.max(1, minutes) * 60_000;
     const checkIdle = () => {
       if (getIdleMs() >= thresholdMs) onTimeoutRef.current();
     };

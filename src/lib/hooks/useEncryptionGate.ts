@@ -64,7 +64,8 @@ export function useEncryptionGate(): {
         if (
           wouldUnlock &&
           autoLockEnabledRef.current &&
-          getIdleMs() >= autoLockMinutesRef.current * 60_000
+          // Clamp to prevent corrupted/stale values (<= 0) from firing immediately.
+          getIdleMs() >= Math.max(1, autoLockMinutesRef.current) * 60_000
         ) {
           await purgeDeviceContent(queryClient);
           if (!cancelled) setAsyncStatus("needs-unlock");
