@@ -438,7 +438,7 @@ export function SettingsClient({ version }: SettingsClientProps) {
                         className="w-full bg-brand hover:bg-brand/90 text-brand-foreground transition-all font-semibold"
                         onClick={() => {
                           trigger("toggle");
-                          router.push("/login");
+                          router.push("/signup");
                         }}
                       >
                         <User className="h-4 w-4 mr-2" />
