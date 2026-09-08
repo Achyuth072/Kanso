@@ -146,10 +146,19 @@ export async function runBackfillMigration(
     }
 
     // Avoid overwriting concurrent writes with stale ciphertext.
-    let query = (raw.from(table) as any).update(patch).eq("id", id);
+    let query = (raw.from(table) as any)
+      .update(patch)
+      .eq("id", id)
+      .select("id");
     if (updatedAt !== null) query = query.eq("updated_at", updatedAt);
-    const { error } = await query;
+    const { data, error } = await query;
     if (error) throw error;
+    // Row changed concurrently and remains plaintext; fail loudly so retry picks it up.
+    if (!data || data.length === 0) {
+      throw new Error(
+        `Migration conflict: ${table} row ${id} changed during migration. Retrying will pick it up.`,
+      );
+    }
 
     onProgress?.({ done: i + 1, total, table });
   }
