@@ -121,8 +121,13 @@ export async function generateRecoveryCode(): Promise<RecoveryCode> {
 }
 
 export function normalizeRecoveryCode(code: string): string {
-  return code
-    .trim()
-    .toUpperCase()
-    .replace(/[^0-9A-Z]/g, "");
+  return (
+    code
+      .trim()
+      .toUpperCase()
+      // Map ambiguous excluded characters (O/I/L) to their intended digits (0/1).
+      .replace(/O/g, "0")
+      .replace(/[IL]/g, "1")
+      .replace(/[^0-9A-Z]/g, "")
+  );
 }
