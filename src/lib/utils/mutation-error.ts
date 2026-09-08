@@ -1,6 +1,12 @@
 import { notify } from "@/lib/notify";
+import { isContentKeyUnavailableError } from "@/lib/supabase/wrapClient";
 
 export function handleMutationError(err: unknown) {
+  if (isContentKeyUnavailableError(err)) {
+    notify.error("Content is locked — unlock the app to save changes.");
+    return;
+  }
+
   if (err instanceof TypeError && err.message === "Failed to fetch") {
     notify.error("Network Error. Changes could not be saved.");
     return;

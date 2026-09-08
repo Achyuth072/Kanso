@@ -1,6 +1,7 @@
 import "./register-adapters";
 import { createClient } from "@/lib/supabase/client";
 import { describeError } from "@/lib/errors/describeError";
+import { isContentKeyUnavailableError } from "@/lib/supabase/wrapClient";
 import { fetchAllRows } from "@/lib/supabase/paginate";
 import type { CalendarEvent } from "@/lib/types/calendar-event";
 import type {
@@ -16,11 +17,8 @@ import {
 } from "./adapter-interface";
 import { computePullMutations, type PullMutations } from "./pull-merge";
 
-// describeError() drops .message; inspect code to preserve actionable locked status.
 function describeSyncError(e: unknown): string {
-  const code =
-    e && typeof e === "object" ? (e as { code?: unknown }).code : undefined;
-  if (code === "content_key_unavailable") {
+  if (isContentKeyUnavailableError(e)) {
     return "Content is locked — unlock the app to sync";
   }
   return describeError(e);

@@ -138,3 +138,48 @@ Two deliberate choices:
 The scrubber is written against a structural event shape rather than the
 vendor's types, so moving to a self-hosted SDK-compatible backend stays a DSN
 change.
+
+## Amended — no `char_length` checks on encrypted columns
+
+Encrypted columns carry no DB-level `char_length` ceiling, enforced by
+`tests/unit/lib/supabase/encryptedColumnConstraints.test.ts` asserting that
+none exists. This looked like dropped defense-in-depth to a later review pass
+— it is deliberate: a length check on ciphertext bounds base64-encoded,
+nonce-and-tag-inflated bytes, not the plaintext a user typed, so it stops
+being a meaningful input-size limit the moment the column starts holding
+envelopes instead of text. Any ceiling worth enforcing belongs at the
+application layer, against the plaintext, before encryption — not at the
+column.
+
+## Amended — wrapped client throws on a missing content key
+
+`wrapSupabaseClient()` (`src/lib/supabase/wrapClient.ts`) rejects the write or
+read, rather than resolving `{data, error}` like Postgrest, when a row needs
+encryption or decryption and the master key isn't loaded (locked, or not yet
+unlocked on this device). This is the one contract every call site is expected
+to agree with:
+
+- The rejection is a real `Error` carrying
+  `{ code: "content_key_unavailable" }`; call sites detect it with
+  `isContentKeyUnavailableError()` from the same module rather than matching
+  on `.message` (which is human-facing and not a stable identifier).
+- Callers must let it propagate — not swallow it behind a resolve-shape
+  `if (error)` check, which a thrown rejection bypasses anyway since the
+  `const { data, error } = await …` assignment itself throws first. A mutation
+  wrapped in `useMutation` reaches `onError` normally; a fire-and-forget call
+  needs its own `try`/`catch` like any other rejecting promise.
+- `handleMutationError()` (`src/lib/utils/mutation-error.ts`) and
+  `describeSyncError()` (`src/lib/sync/orchestrator.ts`) both special-case this
+  code to show "unlock the app" copy instead of the generic error message.
+
+Regular Postgrest failures keep resolving `{data, error}` as before; only the
+locked-key case throws, since it can't produce a payload to resolve with.
+
+Auditing every wrapped-client call site against this contract found one real
+gap: `useCalendarEventMutations.ts`'s three mutations had no `onError` at
+all, unlike every other domain's mutation hooks — a locked-key write there
+failed silently instead of surfacing the same toast task/habit/project
+mutations get. Fixed by wiring `handleMutationError()` into their `onError`,
+matching the existing pattern. `focus_logs` and `user_timer_state` writes
+(`src/lib/mutations/focus.ts`) aren't in `FIELD_MAP` (`src/lib/supabase/fieldMap.ts`),
+so they never hit this throw path and needed no changes.

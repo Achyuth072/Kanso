@@ -46,6 +46,17 @@ export function isJsonField(table: string, field: string): boolean {
   return JSON_FIELDS.has(`${table}.${field}`);
 }
 
+// Thrown on missing or locked content key, unlike PostgREST's resolved { data, error }.
+export const CONTENT_KEY_UNAVAILABLE_CODE = "content_key_unavailable";
+
+export function isContentKeyUnavailableError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: unknown }).code === CONTENT_KEY_UNAVAILABLE_CODE
+  );
+}
+
 export function needsEncryption(
   table: string,
   field: string,
@@ -107,8 +118,7 @@ async function encryptPayload(
         `Cannot write to "${table}": content encryption is set up for this ` +
           "account but the master key is unavailable (locked, or not yet unlocked on this device).",
       ),
-      // describeError() drops .message; .code allows callers to detect locked state.
-      { code: "content_key_unavailable" },
+      { code: CONTENT_KEY_UNAVAILABLE_CODE },
     );
   }
 
@@ -141,7 +151,7 @@ async function decryptRow(
               `Cannot read "${table}": content encryption is set up for this ` +
                 "account but the master key is unavailable (locked, or not yet unlocked on this device).",
             ),
-            { code: "content_key_unavailable" },
+            { code: CONTENT_KEY_UNAVAILABLE_CODE },
           );
         }
         if (out === row) out = { ...row };

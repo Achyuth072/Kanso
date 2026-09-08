@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { calendarEventMutations } from "@/lib/mutations/calendar-event";
 import { useCalendarStore } from "@/lib/calendar/store";
 import { notifyLocalEdit } from "@/lib/sync/sync-scheduler";
+import { handleMutationError } from "@/lib/utils/mutation-error";
 import { toCalendarEventUI } from "@/lib/types/calendar-event";
 import type {
   CreateCalendarEventInput,
@@ -19,12 +20,13 @@ export function useCreateCalendarEvent() {
     mutationFn: (input: CreateCalendarEventInput) =>
       calendarEventMutations.create(input),
     onSuccess: (data: CalendarEvent) => {
-      // Add to calendar store for immediate UI update
       addEvent(toCalendarEventUI(data));
-      // Invalidate queries to refetch from DB
       queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
       queryClient.invalidateQueries({ queryKey: ["calendar-tasks"] });
       notifyLocalEdit();
+    },
+    onError: (err) => {
+      handleMutationError(err);
     },
   });
 }
@@ -42,6 +44,9 @@ export function useUpdateCalendarEvent() {
       queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
       notifyLocalEdit();
     },
+    onError: (err) => {
+      handleMutationError(err);
+    },
   });
 }
 
@@ -55,6 +60,9 @@ export function useDeleteCalendarEvent() {
       deleteEvent(id);
       queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
       notifyLocalEdit();
+    },
+    onError: (err) => {
+      handleMutationError(err);
     },
   });
 }
