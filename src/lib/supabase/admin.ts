@@ -3,14 +3,10 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Privileged Supabase client for server-only route handlers.
+ * Bypasses RLS — use only in trusted server code after verifying sessions.
+ * Never import into client components.
  *
- * Bypasses RLS — use ONLY in trusted server code after verifying the user's
- * session with the publishable/anon client (see createClient in ./server).
- * Required for tables with no client-facing policies, e.g. calendar_oauth_tokens,
- * where the browser must never read the encrypted refresh tokens.
- *
- * Accepts the new Supabase secret key (sb_secret_…) or the legacy service_role
- * key — both bypass RLS. Never import this into a client component.
+ * Not wrapped with wrapSupabaseClient (server has no content-encryption key).
  */
 export function createAdminClient() {
   const secretKey =

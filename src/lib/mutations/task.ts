@@ -1,11 +1,9 @@
 import { createClient } from "@/lib/supabase/client";
 import { mockStore } from "@/lib/mock/mock-store";
 import { calculateNextDueDate } from "@/lib/utils/recurrence";
+import { isCiphertext } from "@/lib/crypto/contentCipher";
 import type { Task, CreateTaskInput, UpdateTaskInput } from "@/lib/types/task";
 
-// A hard-deleted task is re-inserted rather than updated, so it needs its
-// full row shape rebuilt from the in-memory Task — shared by taskMutations
-// .restore for both the parent and its subtasks.
 function toRestorePayload(task: Task) {
   return {
     id: task.id,
@@ -27,12 +25,7 @@ function toRestorePayload(task: Task) {
   };
 }
 
-// Fields common to a duplicated row, shared by taskMutations.duplicate for
-// both the parent and every subtask, guest and Supabase alike. Recurrence
-// and series identity are always stripped — a pasted occurrence must never
-// rejoin its source series — and completion state resets since a duplicate
-// starts as fresh, uncompleted work. parentId is threaded through explicitly
-// since a subtask's copy must land under its *new* parent, not the source's.
+// Duplicated tasks strip recurrence so occurrences cannot rejoin a source series.
 function toDuplicatePayload(task: Task, parentId: string | null) {
   return {
     content: task.content,
@@ -61,9 +54,7 @@ export const taskMutations = {
       localStorage.getItem("kanso_guest_mode") === "true";
 
     if (isGuest) {
-      // day_order intentionally omitted: mockStore.addTask() defaults it to
-      // append-at-the-end (current task count), matching the Supabase max+1
-      // below. A hardcoded 0 here would tie every new task at the top slot.
+      // mockStore defaults day_order to append at the end.
       return mockStore.addTask({
         id: input._clientId,
         content: input.content,
@@ -93,9 +84,7 @@ export const taskMutations = {
     const taskId = input._clientId || crypto.randomUUID();
     const seriesId = input.recurrence ? crypto.randomUUID() : null;
 
-    // Append to the bottom: new task gets max(day_order) + 1 for the user.
-    // The column DEFAULTs to 0, which would tie every new task at the very
-    // top of custom sort once other tasks have been dragged to real values.
+    // DB column defaults to 0; append at bottom to avoid tying at the top.
     const { data: lastTask } = await supabase
       .from("tasks")
       .select("day_order")
@@ -191,7 +180,6 @@ export const taskMutations = {
           updatedTask.recurring_series_id = seriesId;
         }
 
-        // Prevent duplicate future instances in mock store
         const alreadyExists = mockStore
           .getTasks()
           .some(
@@ -259,6 +247,13 @@ export const taskMutations = {
     }
 
     if (is_completed && recurrenceRule) {
+      // Do not copy ciphertext into the next occurrence if read while locked.
+      if (isCiphertext(currentTask.content)) {
+        throw new Error(
+          "Cannot generate the next recurring Occurrence: content encryption key is unavailable (locked, or not yet unlocked on this device).",
+        );
+      }
+
       const now = new Date();
       const nextDueDateIso = calculateNextDueDate(
         now,
@@ -283,21 +278,22 @@ export const taskMutations = {
           .eq("id", id);
       }
 
-      // Prevent duplicate future instances if already created
-      // eslint-disable-next-line local/no-unbounded-supabase-select -- five equality filters incl. an exact due_date
+      // `content` is encrypted at rest and matched client-side after decryption.
+      // eslint-disable-next-line local/no-unbounded-supabase-select -- four equality filters incl. an exact due_date
       const existingTasks = await supabase
         .from("tasks")
-        .select("id")
+        .select("id, content")
         .eq("user_id", currentTask.user_id)
-        .eq("content", currentTask.content)
         .eq("project_id", currentTask.project_id)
         .eq("due_date", nextDueDateIso)
         .eq("is_completed", false);
 
-      if (!existingTasks.data?.length) {
-        // Append to the bottom, same as a manually created task — otherwise
-        // the DB's day_order default of 0 ties the recurring instance at the
-        // top of custom sort.
+      const hasDuplicate = existingTasks.data?.some(
+        (t) => t.content === currentTask.content,
+      );
+
+      if (!hasDuplicate) {
+        // DB column defaults to 0; append at bottom to avoid tying at the top.
         const { data: lastTask } = await supabase
           .from("tasks")
           .select("day_order")
@@ -382,17 +378,14 @@ export const taskMutations = {
     return data as Task;
   },
 
-  // Hard-deletes a task. tasks.parent_id cascades at the DB level, so any
-  // subtasks are destroyed along with it — fetched here first and returned
-  // so the caller can restore the whole subtree if the user hits Undo.
+  // tasks.parent_id cascades in DB; returns deleted subtasks for undo restore.
   delete: async (id: string): Promise<Task[]> => {
     const isGuest =
       typeof window !== "undefined" &&
       localStorage.getItem("kanso_guest_mode") === "true";
 
     if (isGuest) {
-      // mockStore.deleteTask doesn't cascade, so subtasks aren't lost here —
-      // nothing to capture for restore.
+      // mockStore doesn't cascade delete, so subtasks are not lost.
       mockStore.deleteTask(id);
       return [];
     }
@@ -412,9 +405,7 @@ export const taskMutations = {
     return (subtasks as Task[]) ?? [];
   },
 
-  // Re-inserts a hard-deleted task for useDeleteTask's Undo action, along
-  // with any subtasks the delete cascaded away. Parent goes first since
-  // subtasks' parent_id references it.
+  // Parent is inserted before subtasks to satisfy foreign key constraints.
   restore: async (task: Task, subtasks: Task[] = []): Promise<void> => {
     const supabase = createClient();
 
@@ -431,10 +422,7 @@ export const taskMutations = {
     }
   },
 
-  // Accepts pre-computed {id, day_order} pairs produced by the slot-value-swap
-  // in useReorderTasks.onMutate. Each task receives the day_order value from
-  // the cache slot it is moving into — not a fresh sequential 0,1,2... — so
-  // the globally-sorted flat array remains stable across all sections/groups.
+  // Accepts slot-swapped day_orders (not sequential indices) to preserve sort order across groups.
   reorder: async (
     pairs: { id: string; day_order: number }[],
   ): Promise<void> => {
@@ -547,9 +535,6 @@ export const taskMutations = {
 
     if (error) throw new Error(error.message);
 
-    // Throws (rather than swallowing) on either a fetch or insert error, so
-    // a broken subtree surfaces as a failed paste instead of a silent
-    // partial copy reported to the user as a success.
     const duplicateSubtasksRecursively = async (
       originalParentId: string,
       newParentId: string,

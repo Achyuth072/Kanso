@@ -23,15 +23,19 @@ export function useProjects() {
       const { data, error } = await supabase
         .from("projects")
         .select("*")
-        .eq("is_archived", false)
-        .order("is_inbox", { ascending: false })
-        .order("name", { ascending: true });
+        .eq("is_archived", false);
 
       if (error) {
         throw new Error(error.message);
       }
 
-      return data as Project[];
+      // Name is encrypted at rest; sorted client-side.
+      const projects = data as Project[];
+      const inbox = projects.filter((p) => p.is_inbox);
+      const rest = projects
+        .filter((p) => !p.is_inbox)
+        .sort((a, b) => a.name.localeCompare(b.name));
+      return [...inbox, ...rest];
     },
   });
 }
@@ -83,14 +87,14 @@ export function useArchivedProjects() {
       const { data, error } = await supabase
         .from("projects")
         .select("*")
-        .eq("is_archived", true)
-        .order("name", { ascending: true });
+        .eq("is_archived", true);
 
       if (error) {
         throw new Error(error.message);
       }
 
-      return data as Project[];
+      // Name is encrypted at rest; sorted client-side.
+      return (data as Project[]).sort((a, b) => a.name.localeCompare(b.name));
     },
   });
 }

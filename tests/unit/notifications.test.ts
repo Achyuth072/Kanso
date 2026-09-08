@@ -3,6 +3,15 @@ import {
   DEFAULT_NOTIFICATION_OPTIONS,
   displayNotification,
 } from "@/lib/notifications";
+import { encryptField } from "@/lib/crypto/contentCipher";
+
+const { loadKey } = vi.hoisted(() => ({
+  loadKey: vi.fn<() => Promise<Uint8Array | null>>(),
+}));
+
+vi.mock("@/lib/crypto/keyStore", () => ({
+  keyStore: { load: loadKey, save: vi.fn(), clear: vi.fn() },
+}));
 
 function registrationWith(
   notifications: { close: () => void }[] | { rejects: Error },
@@ -95,5 +104,98 @@ describe("displayNotification", () => {
     });
 
     expect(registration.showNotification).toHaveBeenCalledOnce();
+  });
+});
+
+describe("displayNotification with an encrypted body", () => {
+  const key = new Uint8Array(32).fill(7);
+
+  function bodyShown(registration: ServiceWorkerRegistration): string {
+    const showNotification = registration.showNotification as unknown as {
+      mock: { calls: [string, { body?: string }][] };
+    };
+    return showNotification.mock.calls[0][1].body ?? "";
+  }
+
+  it("names the task when the key is present on this device", async () => {
+    loadKey.mockResolvedValue(key);
+    const registration = registrationWith([]);
+
+    await displayNotification(registration, "Task Due Soon", {
+      body: "You have a task due now.",
+      encrypted: {
+        template: 'Your task "{}" is due now.',
+        ciphertext: await encryptField(key, "Renew passport"),
+      },
+    });
+
+    expect(bodyShown(registration)).toBe(
+      'Your task "Renew passport" is due now.',
+    );
+  });
+
+  it("inserts a title containing $-sequences verbatim", async () => {
+    loadKey.mockResolvedValue(key);
+    const registration = registrationWith([]);
+
+    await displayNotification(registration, "Task Due Soon", {
+      body: "You have a task due now.",
+      encrypted: {
+        template: 'Your task "{}" is due now.',
+        ciphertext: await encryptField(key, "Pay $$ rent"),
+      },
+    });
+
+    expect(bodyShown(registration)).toBe('Your task "Pay $$ rent" is due now.');
+  });
+
+  it("degrades to the count fallback when no key is available", async () => {
+    loadKey.mockResolvedValue(null);
+    const registration = registrationWith([]);
+
+    await displayNotification(registration, "Task Due Soon", {
+      body: "You have a task due now.",
+      encrypted: {
+        template: 'Your task "{}" is due now.',
+        ciphertext: await encryptField(key, "Renew passport"),
+      },
+    });
+
+    expect(registration.showNotification).toHaveBeenCalledOnce();
+    expect(bodyShown(registration)).toBe("You have a task due now.");
+  });
+
+  it("degrades to the count fallback when the ciphertext does not decrypt", async () => {
+    loadKey.mockResolvedValue(new Uint8Array(32).fill(9));
+    const registration = registrationWith([]);
+
+    await displayNotification(registration, "Task Due Soon", {
+      body: "You have a task due now.",
+      encrypted: {
+        template: 'Your task "{}" is due now.',
+        ciphertext: await encryptField(key, "Renew passport"),
+      },
+    });
+
+    expect(registration.showNotification).toHaveBeenCalledOnce();
+    expect(bodyShown(registration)).toBe("You have a task due now.");
+  });
+
+  it("keeps the ciphertext out of the shown notification options", async () => {
+    loadKey.mockResolvedValue(key);
+    const registration = registrationWith([]);
+
+    await displayNotification(registration, "Task Due Soon", {
+      body: "You have a task due now.",
+      encrypted: {
+        template: 'Your task "{}" is due now.',
+        ciphertext: await encryptField(key, "Renew passport"),
+      },
+    });
+
+    expect(registration.showNotification).toHaveBeenCalledWith(
+      "Task Due Soon",
+      expect.not.objectContaining({ encrypted: expect.anything() }),
+    );
   });
 });

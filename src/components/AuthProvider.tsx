@@ -7,8 +7,11 @@ import {
   useState,
   useCallback,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/supabase/client";
 import { EMAIL_CONFIRMED_PATH } from "@/lib/auth/auth-routes";
+import { purgeDeviceContent } from "@/lib/crypto/purge";
 import type { OAuthProviderId } from "@/lib/auth/providers";
 import type {
   User,
@@ -45,8 +48,6 @@ type AuthContextType = {
     password: string,
     nonce?: string,
   ) => Promise<{ error: AuthError | null }>;
-  // Sends a nonce (to the user's email, or phone if no confirmed email) for
-  // the Secure Password Change reauthentication step below.
   reauthenticate: () => Promise<{ error: AuthError | null }>;
   linkIdentity: (
     provider: OAuthProviderId,
@@ -101,6 +102,7 @@ export function AuthProvider({
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(!isGuestMode);
   const supabase = createClient();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     // A real session always wins — a stale guest flag must not shadow it.
@@ -268,13 +270,21 @@ export function AuthProvider({
 
   const signOut = useCallback(async () => {
     if (isGuestMode) {
+      // Guest data is the user's only copy — never purged.
       clearGuestFlag();
       setUser(null);
       setIsGuestMode(false);
     } else {
       await supabase.auth.signOut();
+      try {
+        await purgeDeviceContent(queryClient);
+      } catch (err) {
+        // A purge failure (e.g. IndexedDB blocked) must not strand the user
+        // on a "signing out" screen — the session has already ended.
+        Sentry.captureException(err);
+      }
     }
-  }, [supabase.auth, isGuestMode]);
+  }, [supabase.auth, isGuestMode, queryClient]);
 
   return (
     <AuthContext.Provider

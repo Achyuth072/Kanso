@@ -41,7 +41,9 @@ import { PwaInstallRow } from "@/components/settings/PwaInstallRow";
 import { DeleteUserDataDialog } from "@/components/settings/DeleteUserDataDialog";
 import { BackupSyncSettings } from "@/components/settings/BackupSyncSettings";
 import { AccountSection } from "@/components/settings/AccountSection";
+import { EncryptionSection } from "@/components/settings/EncryptionSection";
 import { PrivacySection } from "@/components/settings/PrivacySection";
+import { DiagnosticExportSettings } from "@/components/settings/DiagnosticExportSettings";
 import { useAccountData } from "@/lib/hooks/useAccountData";
 import { useProfile } from "@/lib/hooks/useProfile";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -367,8 +369,18 @@ export function SettingsClient({ version }: SettingsClientProps) {
                     <NotificationSettings />
 
                     <PwaInstallRow />
+                  </div>
+                </section>
 
+                <section className="space-y-4">
+                  <div>
+                    <h2 className="type-h3">Privacy &amp; Diagnostics</h2>
+                  </div>
+
+                  <div className="space-y-3">
                     <PrivacySection />
+
+                    <DiagnosticExportSettings />
                   </div>
                 </section>
 
@@ -434,7 +446,7 @@ export function SettingsClient({ version }: SettingsClientProps) {
                         className="w-full bg-brand hover:bg-brand/90 text-brand-foreground transition-all font-semibold"
                         onClick={() => {
                           trigger("toggle");
-                          router.push("/login");
+                          router.push("/signup");
                         }}
                       >
                         <User className="h-4 w-4 mr-2" />
@@ -495,6 +507,8 @@ export function SettingsClient({ version }: SettingsClientProps) {
                   />
 
                   {!isGuestMode && <AccountSection />}
+
+                  {!isGuestMode && <EncryptionSection />}
 
                   <BackupSyncSettings />
 
@@ -608,7 +622,6 @@ interface GoalFieldProps {
   onCommit: (value: number | null) => void;
 }
 
-/** Local draft; commits to the store on blur. */
 function GoalField({ label, value, onCommit }: GoalFieldProps) {
   const [text, setText] = useState(value != null ? String(value) : "");
   const [prevValue, setPrevValue] = useState(value);

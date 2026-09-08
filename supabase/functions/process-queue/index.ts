@@ -10,7 +10,7 @@ import {
   type FailureResolution,
   type NotificationType,
 } from "../_shared/push-delivery.ts";
-import { toErrorMessage } from "../_shared/errors.ts";
+import { describeError, toErrorMessage } from "../_shared/errors.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,6 +28,7 @@ interface QueueRow {
   payload: {
     title?: string;
     body?: string;
+    encrypted?: { template: string; ciphertext: string };
     data?: Record<string, unknown>;
   } | null;
 }
@@ -147,6 +148,7 @@ serve(async (req: Request) => {
           const payload = JSON.stringify({
             title: item.payload?.title || "Kagelin",
             body: item.payload?.body || "Notification",
+            encrypted: item.payload?.encrypted,
             data: item.payload?.data || {},
             // Reuse the Topic: what collapses in transit collapses in the tray.
             tag: sendOptions.topic,
@@ -208,7 +210,7 @@ serve(async (req: Request) => {
           await settle(
             item.id,
             resolveFailure(item.retry_count, [undefined]),
-            toErrorMessage(error),
+            describeError(error),
           );
         }
       }

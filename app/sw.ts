@@ -9,6 +9,7 @@ import {
 } from "serwist";
 import {
   displayNotification,
+  type EncryptedNotificationBody,
   type NotificationDisplayOptions,
 } from "@/lib/notifications";
 
@@ -121,6 +122,7 @@ interface PushPayload {
   tag?: string;
   data?: unknown;
   actions?: NotificationDisplayOptions["actions"];
+  encrypted?: EncryptedNotificationBody;
 }
 
 const FALLBACK_TITLE = "Kagelin";
@@ -163,6 +165,9 @@ async function showPushNotification(payload: PushPayload): Promise<void> {
   }
   if (payload.data) options.data = payload.data;
   if (payload.actions) options.actions = payload.actions;
+  if (payload.encrypted?.ciphertext && payload.encrypted?.template) {
+    options.encrypted = payload.encrypted;
+  }
 
   try {
     await displayNotification(

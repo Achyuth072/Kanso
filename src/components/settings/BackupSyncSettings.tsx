@@ -14,6 +14,7 @@ import {
   Cloud,
   Trash2,
   BellRing,
+  AlertTriangle,
 } from "lucide-react";
 import { notify } from "@/lib/notify";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,24 @@ import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDial
 import { ImportDialog } from "./ImportDialog";
 import { SETTINGS_CARD_CLASS } from "@/components/settings/settingsCardClass";
 
+// Every registered account is required to set a content passphrase
+// (see EncryptionGate), so this only needs to skip guests, who have none.
+function EnvelopeWarning() {
+  return (
+    <div
+      role="alert"
+      className="flex gap-2.5 text-xs text-destructive-surface-foreground bg-destructive-surface border border-destructive-surface-border rounded-lg p-3.5"
+    >
+      <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+      <p>
+        This file is not covered by your content passphrase — it&apos;s plain,
+        readable data. Store or share it as carefully as you would the data
+        itself.
+      </p>
+    </div>
+  );
+}
+
 interface CloudSyncCardProps {
   credentials: WebDAVCredentials;
   onCredentialsChange: (
@@ -76,6 +95,7 @@ interface CloudSyncCardProps {
   onResetCredentials: () => void;
   onSyncUpload: () => void;
   onSyncDownload: () => void;
+  showEnvelopeWarning: boolean;
 }
 
 function CloudSyncCard({
@@ -88,6 +108,7 @@ function CloudSyncCard({
   onResetCredentials,
   onSyncUpload,
   onSyncDownload,
+  showEnvelopeWarning,
 }: CloudSyncCardProps) {
   return (
     <TabsContent value="cloud" className="mt-0 outline-none">
@@ -238,6 +259,8 @@ function CloudSyncCard({
             Your credentials are used only for this session — they aren&apos;t
             stored, and re-entering them is required after a reload.
           </p>
+
+          {showEnvelopeWarning && <EnvelopeWarning />}
         </CardContent>
       </Card>
     </TabsContent>
@@ -671,6 +694,11 @@ export function BackupSyncSettings() {
                   Import
                 </Button>
               </CardContent>
+              {!isGuestMode && (
+                <div className="px-4 pb-4">
+                  <EnvelopeWarning />
+                </div>
+              )}
               <Separator className="bg-border/20 mx-4" />
               <div className="px-4 pb-4 pt-4">
                 <Button
@@ -700,6 +728,7 @@ export function BackupSyncSettings() {
           onResetCredentials={resetCredentials}
           onSyncUpload={handleSyncUpload}
           onSyncDownload={handleSyncDownload}
+          showEnvelopeWarning={!isGuestMode}
         />
       </Tabs>
 

@@ -4,6 +4,7 @@ import { withSentryConfig } from "@sentry/nextjs";
 import { version } from "./package.json";
 
 import bundleAnalyzer from "@next/bundle-analyzer";
+import { contentSecurityPolicyHeader } from "@/lib/security/csp";
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
@@ -22,7 +23,6 @@ const withSerwist = withSerwistInit({
 
 const isMobile = process.env.NEXT_PUBLIC_IS_CAPACITOR === "true";
 
-// Turbopack detection - skip Serwist wrapper for faster dev builds
 const isTurbopack = process.env.TURBOPACK === "1";
 
 const nextConfig: NextConfig = {
@@ -34,10 +34,10 @@ const nextConfig: NextConfig = {
     : [],
   output: isMobile ? "export" : undefined,
   images: {
-    // Disable image optimization for mobile (no server available)
+    // Mobile builds use static export (no optimization server).
     unoptimized: isMobile,
   },
-  // Empty turbopack config to silence webpack warning
+  // Silences Next.js warning when webpack plugins coexist with Turbopack.
   turbopack: {},
   reactCompiler: true,
   poweredByHeader: false,
@@ -46,9 +46,17 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          // Clickjacking/MIME-sniffing hardening flagged by the ZAP baseline scan.
+          // Retained for older browsers; CSP frame-ancestors supersedes it.
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
+          contentSecurityPolicyHeader({
+            supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+            sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+            mode:
+              process.env.CSP_MODE === "report-only"
+                ? "report-only"
+                : undefined,
+          }),
         ],
       },
       {
@@ -73,19 +81,17 @@ const nextConfig: NextConfig = {
   },
 };
 
-// Only wrap with Serwist when using Webpack (dev:pwa, build)
 const config = withBundleAnalyzer(
   isTurbopack ? nextConfig : withSerwist(nextConfig),
 );
 
-// no-ops (no source map upload) unless SENTRY_AUTH_TOKEN + org/project are set
+// No-ops unless SENTRY_AUTH_TOKEN and org/project are set.
 export default withSentryConfig(config, {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
   silent: !process.env.CI,
   widenClientFileUpload: true,
-  // Uploads source maps once after the full build instead of once per
-  // compiler pass (client/server/edge) — faster in CI when a token is set.
+  // Upload source maps once after the full build instead of per compiler pass.
   useRunAfterProductionCompileHook: true,
   webpack: {
     treeshake: {

@@ -18,31 +18,26 @@ export function PrivacySection() {
   };
 
   return (
-    <div className="space-y-4 p-4 rounded-lg border border-border/50 bg-background">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="p-2 rounded-full bg-secondary/30 shrink-0 mt-0.5">
+    <div className="space-y-3 p-4 rounded-lg border border-border/50 bg-background">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="p-2 rounded-full bg-secondary/30 shrink-0">
             <ShieldCheck className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="space-y-1">
-            <p className="text-sm font-medium leading-none">
-              Share Anonymous Telemetry
-            </p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Help improve Kagelin by sharing anonymous usage metrics (feature
-              usage, timer durations, platform). Personal data, task titles, and
-              notes are never collected or transmitted. See our{" "}
-              <PrivacyPolicyLink />.
-            </p>
-          </div>
+          <p className="text-sm font-medium">Share Anonymous Telemetry</p>
         </div>
         <Switch
           checked={isEnabled}
           onCheckedChange={handleToggle}
           aria-label="Share Anonymous Telemetry"
-          className="shrink-0 mt-0.5"
+          className="shrink-0"
         />
       </div>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        Help improve Kagelin by sharing anonymous usage metrics (feature usage,
+        timer durations, platform). Personal data, task titles, and notes are
+        never collected or transmitted. See our <PrivacyPolicyLink />.
+      </p>
     </div>
   );
 }

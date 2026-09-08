@@ -33,6 +33,7 @@ import {
 import { GlobalHotkeys } from "@/components/layout/GlobalHotkeys";
 import { useMigrationStrategy } from "@/lib/hooks/useMigrationStrategy";
 import { LoaderOverlay } from "@/components/ui/loader-overlay";
+import { EncryptionGate } from "@/components/encryption/EncryptionGate";
 
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/lib/store/uiStore";
@@ -283,6 +284,10 @@ function AppShellContent({ children }: AppShellProps) {
   const hideMobileNav = pathname === "/focus" || pathname === "/settings";
   const hasTopBanner = useActiveBanner() !== null;
 
+  // Must run inside EncryptionGate so converting guests set a passphrase
+  // before local data is encrypted and uploaded.
+  const { isMigrating } = useMigrationStrategy();
+
   const setShortcutsHelpOpen = useUiStore(
     (state) => state.setShortcutsHelpOpen,
   );
@@ -326,6 +331,7 @@ function AppShellContent({ children }: AppShellProps) {
 
   return (
     <CompletedTasksProvider>
+      {isMigrating && <LoaderOverlay message="Migrating guest data..." />}
       <SidebarProvider defaultOpen={true}>
         <GlobalHotkeys
           setCommandOpen={setCommandOpen}
@@ -403,7 +409,6 @@ function AppShellContent({ children }: AppShellProps) {
 
 export default function AppShell({ children }: AppShellProps) {
   const { user, loading } = useAuth();
-  const { isMigrating } = useMigrationStrategy();
   const pathname = usePathname();
   // Admin routes are self-contained pages with their own nav — they never
   // need the app sidebar/header shell.
@@ -424,12 +429,13 @@ export default function AppShell({ children }: AppShellProps) {
             {loading || !user || isBareRoute ? (
               <>{children}</>
             ) : (
-              <AppShellContent>{children}</AppShellContent>
+              <EncryptionGate>
+                <AppShellContent>{children}</AppShellContent>
+              </EncryptionGate>
             )}
           </PiPProvider>
         </HabitActionsProvider>
       </TaskActionsProvider>
-      {isMigrating && <LoaderOverlay message="Migrating guest data..." />}
     </ProjectActionsProvider>
   );
 }

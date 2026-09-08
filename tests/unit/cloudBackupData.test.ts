@@ -56,6 +56,18 @@ describe("collectCloudBackup", () => {
     expect(backup.events).toEqual([{ id: "event-1", title: "Standup" }]);
   });
 
+  it("never reads connected calendar accounts into the payload", async () => {
+    const supabase = createSupabaseStub({
+      external_calendars: [{ id: "conn-1", name: "Work Google Calendar" }],
+    });
+
+    await collectCloudBackup(
+      supabase as unknown as Parameters<typeof collectCloudBackup>[0],
+    );
+
+    expect(supabase.from).not.toHaveBeenCalledWith("external_calendars");
+  });
+
   it("stamps metadata so a restored payload can be identified", async () => {
     const supabase = createSupabaseStub({});
 

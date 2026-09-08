@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
+// Server client is not wrapped: the server has no content-encryption key.
 export async function createClient() {
   const cookieStore = await cookies();
 

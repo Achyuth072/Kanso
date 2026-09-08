@@ -1,12 +1,27 @@
 import { renderHook, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AuthProvider, useAuth } from "@/components/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
+import { purgeDeviceContent } from "@/lib/crypto/purge";
 import type { Session, User, UserIdentity } from "@supabase/supabase-js";
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: vi.fn(),
 }));
+
+vi.mock("@/lib/crypto/purge", () => ({
+  purgeDeviceContent: vi.fn().mockResolvedValue(undefined),
+}));
+
+// AuthProvider is always nested inside a QueryClientProvider in production
+// (see app/layout.tsx) — signOut() reaches it via useQueryClient().
+function withQueryClient(children: React.ReactNode) {
+  const queryClient = new QueryClient();
+  return (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+}
 
 const mockUser = { id: "real-user-id", email: "real@user.com" } as User;
 const mockSession = { user: mockUser } as Session;
@@ -49,9 +64,10 @@ describe("AuthProvider", () => {
     );
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider initialIsGuest={true}>{children}</AuthProvider>
-      ),
+      wrapper: ({ children }) =>
+        withQueryClient(
+          <AuthProvider initialIsGuest={true}>{children}</AuthProvider>,
+        ),
     });
 
     await waitFor(() => {
@@ -70,9 +86,10 @@ describe("AuthProvider", () => {
     );
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider initialIsGuest={true}>{children}</AuthProvider>
-      ),
+      wrapper: ({ children }) =>
+        withQueryClient(
+          <AuthProvider initialIsGuest={true}>{children}</AuthProvider>,
+        ),
     });
 
     await waitFor(() => {
@@ -94,9 +111,10 @@ describe("AuthProvider", () => {
     );
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider initialIsGuest={false}>{children}</AuthProvider>
-      ),
+      wrapper: ({ children }) =>
+        withQueryClient(
+          <AuthProvider initialIsGuest={false}>{children}</AuthProvider>,
+        ),
     });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -116,9 +134,10 @@ describe("AuthProvider", () => {
     );
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider initialIsGuest={false}>{children}</AuthProvider>
-      ),
+      wrapper: ({ children }) =>
+        withQueryClient(
+          <AuthProvider initialIsGuest={false}>{children}</AuthProvider>,
+        ),
     });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -144,9 +163,10 @@ describe("AuthProvider", () => {
     );
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider initialIsGuest={false}>{children}</AuthProvider>
-      ),
+      wrapper: ({ children }) =>
+        withQueryClient(
+          <AuthProvider initialIsGuest={false}>{children}</AuthProvider>,
+        ),
     });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -174,9 +194,10 @@ describe("AuthProvider", () => {
     );
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider initialIsGuest={false}>{children}</AuthProvider>
-      ),
+      wrapper: ({ children }) =>
+        withQueryClient(
+          <AuthProvider initialIsGuest={false}>{children}</AuthProvider>,
+        ),
     });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -201,9 +222,10 @@ describe("AuthProvider", () => {
     );
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider initialIsGuest={false}>{children}</AuthProvider>
-      ),
+      wrapper: ({ children }) =>
+        withQueryClient(
+          <AuthProvider initialIsGuest={false}>{children}</AuthProvider>,
+        ),
     });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -229,9 +251,10 @@ describe("AuthProvider", () => {
     );
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider initialIsGuest={false}>{children}</AuthProvider>
-      ),
+      wrapper: ({ children }) =>
+        withQueryClient(
+          <AuthProvider initialIsGuest={false}>{children}</AuthProvider>,
+        ),
     });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -250,9 +273,10 @@ describe("AuthProvider", () => {
     );
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider initialIsGuest={false}>{children}</AuthProvider>
-      ),
+      wrapper: ({ children }) =>
+        withQueryClient(
+          <AuthProvider initialIsGuest={false}>{children}</AuthProvider>,
+        ),
     });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -272,9 +296,10 @@ describe("AuthProvider", () => {
     );
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider initialIsGuest={false}>{children}</AuthProvider>
-      ),
+      wrapper: ({ children }) =>
+        withQueryClient(
+          <AuthProvider initialIsGuest={false}>{children}</AuthProvider>,
+        ),
     });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -292,9 +317,10 @@ describe("AuthProvider", () => {
     );
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider initialIsGuest={true}>{children}</AuthProvider>
-      ),
+      wrapper: ({ children }) =>
+        withQueryClient(
+          <AuthProvider initialIsGuest={true}>{children}</AuthProvider>,
+        ),
     });
 
     await waitFor(() => expect(result.current.isGuestMode).toBe(true));
@@ -305,18 +331,21 @@ describe("AuthProvider", () => {
     expect(supabase.auth.signOut).not.toHaveBeenCalled();
     expect(result.current.user).toBeNull();
     expect(localStorage.getItem("kanso_guest_mode")).toBeNull();
+    // Guest data is the user's only copy — must never be purged.
+    expect(purgeDeviceContent).not.toHaveBeenCalled();
   });
 
-  it("signs out a registered user via Supabase, not the guest-flag path", async () => {
+  it("signs out a registered user via Supabase, not the guest-flag path, and purges the device's content", async () => {
     const supabase = mockSupabase(mockSession);
     vi.mocked(createClient).mockReturnValue(
       supabase as unknown as ReturnType<typeof createClient>,
     );
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider initialIsGuest={false}>{children}</AuthProvider>
-      ),
+      wrapper: ({ children }) =>
+        withQueryClient(
+          <AuthProvider initialIsGuest={false}>{children}</AuthProvider>,
+        ),
     });
 
     await waitFor(() => expect(result.current.user?.id).toBe("real-user-id"));
@@ -324,6 +353,7 @@ describe("AuthProvider", () => {
     await result.current.signOut();
 
     expect(supabase.auth.signOut).toHaveBeenCalledTimes(1);
+    expect(purgeDeviceContent).toHaveBeenCalledTimes(1);
   });
 
   it("forces the account picker for google and github", async () => {
@@ -333,9 +363,10 @@ describe("AuthProvider", () => {
     );
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider initialIsGuest={false}>{children}</AuthProvider>
-      ),
+      wrapper: ({ children }) =>
+        withQueryClient(
+          <AuthProvider initialIsGuest={false}>{children}</AuthProvider>,
+        ),
     });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -368,9 +399,10 @@ describe("AuthProvider", () => {
     );
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider initialIsGuest={false}>{children}</AuthProvider>
-      ),
+      wrapper: ({ children }) =>
+        withQueryClient(
+          <AuthProvider initialIsGuest={false}>{children}</AuthProvider>,
+        ),
     });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -392,9 +424,10 @@ describe("AuthProvider", () => {
     );
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider initialIsGuest={false}>{children}</AuthProvider>
-      ),
+      wrapper: ({ children }) =>
+        withQueryClient(
+          <AuthProvider initialIsGuest={false}>{children}</AuthProvider>,
+        ),
     });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -440,9 +473,10 @@ describe("AuthProvider", () => {
     );
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider initialIsGuest={false}>{children}</AuthProvider>
-      ),
+      wrapper: ({ children }) =>
+        withQueryClient(
+          <AuthProvider initialIsGuest={false}>{children}</AuthProvider>,
+        ),
     });
 
     await waitFor(() => expect(result.current.loading).toBe(false));

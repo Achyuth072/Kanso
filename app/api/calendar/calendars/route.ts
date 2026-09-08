@@ -14,6 +14,7 @@ export async function GET() {
   if (authError) return authError;
 
   const admin = createAdminClient();
+  // Service-role bypasses the decrypting wrapper: `name` is ciphertext here.
   // eslint-disable-next-line local/no-unbounded-supabase-select -- handful of calendars per user
   const { data, error } = await admin
     .from("external_calendars")
@@ -60,6 +61,7 @@ export async function POST(request: Request) {
     .map((c) => ({
       user_id: user.id,
       provider,
+      // Already encrypted by connectCalendars — service-role writes skip the wrapper.
       name: c.name,
       color: c.color ?? "#4B6CB7",
       remote_calendar_id: c.remote_calendar_id,
