@@ -60,9 +60,8 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
           </ResponsiveDialogDescription>
         </ResponsiveDialogHeader>
 
-        <div className="py-4">
+        <div className="px-4 py-4 sm:px-0">
           <div className="space-y-4">
-            {/* UHabits Import */}
             <div
               className="flex items-center justify-between p-4 rounded-xl border border-border/40 bg-secondary/10 hover:bg-secondary/20 transition-all cursor-pointer group"
               onClick={() => {
@@ -107,7 +106,6 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
               />
             </div>
 
-            {/* ICS Import */}
             <div
               className="flex items-center justify-between p-4 rounded-xl border border-border/40 bg-secondary/10 hover:bg-secondary/20 transition-all cursor-pointer group"
               onClick={() => {

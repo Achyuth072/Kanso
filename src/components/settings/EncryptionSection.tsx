@@ -334,11 +334,13 @@ function RecoveryCodeCard({ userId }: { userId: string }) {
             </ResponsiveDialogDescription>
           </ResponsiveDialogHeader>
           {newCode && (
-            <RecoveryCodeDisplay
-              recoveryCode={newCode}
-              onContinue={() => setNewCode(null)}
-              continueLabel="Done"
-            />
+            <div className="px-4 pb-4 sm:p-0">
+              <RecoveryCodeDisplay
+                recoveryCode={newCode}
+                onContinue={() => setNewCode(null)}
+                continueLabel="Done"
+              />
+            </div>
           )}
         </ResponsiveDialogContent>
       </ResponsiveDialog>
