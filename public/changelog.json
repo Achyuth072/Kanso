@@ -1,5 +1,47 @@
 [
   {
+    "version": "1.43.0-preview.0",
+    "date": "2026-09-08",
+    "channel": "preview",
+    "sections": {
+      "Added": [
+        "End-to-end encryption for task, habit, and calendar content",
+        "Content passphrase setup, unlock, recovery, and rewrap",
+        "Locked state and manual lock, distinct from sign-out",
+        "Auto-lock after inactivity, off by default",
+        "Diagnostic export for bug reports",
+        "Warn that Backup exports leave the encrypted envelope"
+      ],
+      "Improved": [
+        "Consolidate the ciphertext envelope format into one module",
+        "Contain egress with content security policy",
+        "Scrub user content from error reports before send",
+        "Queue and display notifications without readable content"
+      ],
+      "Fixed": [
+        "Clamp auto-lock minutes against a corrupted zero value",
+        "Cancel in-flight queries before purging device content",
+        "Update the offline key-row cache directly after passphrase/recovery rotation",
+        "Surface an actionable message when sync hits a locked content key",
+        "Canonicalize visually-ambiguous chars in recovery codes",
+        "Fail migration loudly on a stale concurrent write",
+        "Guard backfill migration against concurrent edits and stale offline state",
+        "Gate migrated_at on pre-existing plaintext so backfill isn't skipped",
+        "DecryptRow throws instead of leaking ciphertext when key is unavailable",
+        "Backfill cancels legacy plaintext notifications and scrubs stale diagnostic text",
+        "Guest conversion sets a passphrase and encrypts before upload",
+        "Restart the idle clock when caching the master key so unlock sticks",
+        "Purge persisted query cache on sign-out",
+        "Dedupe ICS imports on ics_uid so re-importing a file adds nothing",
+        "Pad drawer bodies that inherit no padding on mobile",
+        "Restructure the diagnostic bundle dialog for mobile and warn before sharing",
+        "Give telemetry and diagnostics their own settings section",
+        "Point Sync to Account at signup instead of the sign-in form",
+        "Swap amber alerts for terracotta tokens that pass AA contrast in dark mode"
+      ]
+    }
+  },
+  {
     "version": "1.42.0",
     "date": "2026-09-01",
     "channel": "stable",
@@ -774,31 +816,6 @@
         "Drop only via constraint to avoid dropping index backing it",
         "Make calendar_events and push_subscriptions migrations idempotent",
         "Rename out-of-order migration files to sort after remote history"
-      ]
-    }
-  },
-  {
-    "version": "1.25.0",
-    "date": "2026-07-12",
-    "channel": "stable",
-    "sections": {
-      "Added": [
-        "Cloudflare Turnstile bot protection on the magic-link sign-in form",
-        "Persistent reconnect banner when a Google Calendar connection is revoked",
-        "Root and global error boundaries so unexpected errors show a recovery screen instead of a blank page"
-      ],
-      "Improved": [
-        "Rate limiting added to the WebDAV and push notification routes to prevent abuse",
-        "WebDAV proxy hardened against SSRF with a DNS-pinned guard",
-        "Focus timer play/pause/cancel controls now sync reliably to the server instead of only updating locally",
-        "Next.js upgraded to patch known security advisories"
-      ],
-      "Fixed": [
-        "Focus timer no longer auto-starts again after being paused",
-        "WebDAV credentials no longer persisted to browser storage, and gated to registered users",
-        "Google Calendar connect/callback redirect mismatch that could break the OAuth flow",
-        "Auth callback no longer accepts unsafe redirect values",
-        "Unfinished CalDAV providers hidden from the connect flow"
       ]
     }
   }
