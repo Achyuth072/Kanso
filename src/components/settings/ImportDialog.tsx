@@ -114,7 +114,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
               }}
             >
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-blue-500/10 text-blue-500">
+                <div className="p-2 rounded-full bg-brand/10 text-brand">
                   <Calendar className="h-5 w-5" />
                 </div>
                 <div>
@@ -127,7 +127,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500 hover:text-blue-600"
+                className="h-8 opacity-0 group-hover:opacity-100 transition-opacity text-brand"
                 disabled={isAnyImporting}
                 aria-label="Select iCalendar ICS file"
               >
