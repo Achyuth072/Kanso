@@ -208,6 +208,36 @@ describe("useMigrationStrategy", () => {
     expect(window.location.reload).not.toHaveBeenCalled();
   });
 
+  it("MIG-N-03: migrates when the guest flag was already cleared before mount", async () => {
+    const guestData = {
+      tasks: [{ id: "g-t1", content: "Task 1", created_at: "2023-01-01" }],
+      projects: [],
+      habits: [],
+      habit_entries: [],
+      focus_logs: [],
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(guestData));
+    mockAuthAsRealUser();
+
+    setupMockSequence([
+      { data: [] },
+      { data: [], count: 0 },
+      { data: [], count: 0 },
+      { data: [{ id: "s-t1", content: "Task 1", created_at: "2023-01-01" }] },
+    ]);
+
+    renderHook(() => useMigrationStrategy());
+
+    await waitFor(
+      () => {
+        expect(localStorage.removeItem).toHaveBeenCalledWith(STORAGE_KEY);
+        expect(window.location.reload).toHaveBeenCalled();
+      },
+      { timeout: 4000 },
+    );
+  });
+
   it("MIG-N-01: Successful migration flow", async () => {
     const guestData = {
       tasks: [{ id: "g-t1", content: "Task 1", created_at: "2023-01-01" }],

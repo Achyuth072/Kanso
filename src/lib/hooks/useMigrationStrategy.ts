@@ -26,14 +26,10 @@ export function useMigrationStrategy() {
       return;
     }
 
-    const guestModeActive = localStorage.getItem("kanso_guest_mode") === "true";
+    // AuthProvider clears kanso_guest_mode on session detection before this hook runs.
     const guestDataStr = localStorage.getItem(GUEST_DATA_STORAGE_KEY);
 
-    if (!guestModeActive || !guestDataStr) {
-      if (guestModeActive) {
-        localStorage.removeItem("kanso_guest_mode");
-        document.cookie = "kanso_guest_mode=; path=/; max-age=0";
-      }
+    if (!guestDataStr) {
       return;
     }
 
@@ -294,8 +290,8 @@ export function useMigrationStrategy() {
   }, [user, isGuestMode, supabase]);
 
   useEffect(() => {
-    const guestMode = localStorage.getItem("kanso_guest_mode") === "true";
-    if (user && user.id !== "guest" && !isGuestMode && guestMode) {
+    const hasGuestData = localStorage.getItem(GUEST_DATA_STORAGE_KEY) !== null;
+    if (user && user.id !== "guest" && !isGuestMode && hasGuestData) {
       migrate();
     }
   }, [user, isGuestMode, migrate]);
