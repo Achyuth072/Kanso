@@ -1,5 +1,19 @@
 [
   {
+    "version": "1.43.0-preview.1",
+    "date": "2026-09-09",
+    "channel": "preview",
+    "sections": {
+      "Improved": [
+        "Parallelize serial encryption work"
+      ],
+      "Fixed": [
+        "Encryption correctness follow-ups",
+        "Unify wrapped-client locked-key error contract across call sites"
+      ]
+    }
+  },
+  {
     "version": "1.43.0-preview.0",
     "date": "2026-09-08",
     "channel": "preview",
@@ -776,46 +790,6 @@
         "Replace UI emoji with lucide icons and strip them from notification titles",
         "Update classNames/props for react-day-picker v10 rename",
         "Pin function search_path and revoke public execute per supabase advisors"
-      ]
-    }
-  },
-  {
-    "version": "1.26.0-preview.0",
-    "date": "2026-07-21",
-    "channel": "preview",
-    "sections": {
-      "Added": [
-        "Derive changelog entries and version bumps from commits on both release channels",
-        "Wire provenance capture into the uhabits import flow",
-        "Add habit_imports table and habits.source_uuid column",
-        "Add persistImportSource for round-trip provenance capture",
-        "Capture raw uhabits source and stamp source_uuid in the import mapper",
-        "Forward source_uuid through CreateHabitInput and the create mutation",
-        "Add source_uuid to Habit for import provenance linking",
-        "Carry uhabits habit frequency through import for streak fidelity",
-        "Implement guest mode management in AuthProvider",
-        "Add /api/health uptime-monitor endpoint"
-      ],
-      "Improved": [
-        "Batch uhabits import habit creation with a prefetched sort_order",
-        "Rework guest mode seed data generation"
-      ],
-      "Fixed": [
-        "Current streak now reports the most-recent run within a pending window",
-        "Update UI to indicate beta status for Loop Habit Tracker and improve error message clarity",
-        "Extend row-cap pagination to stats and account data export",
-        "Paginate habit_entries fetch so history past 1000 rows loads",
-        "Copy sql.js wasm on build so uhabits import works on deploy",
-        "Report guest storage write failures to Sentry",
-        "Exclude wasm assets from auth middleware so uhabits import works",
-        "Bulk-write guest habit entries and stop swallowing storage errors",
-        "Replace UI emoji with lucide icons and strip them from notification titles",
-        "Update classNames/props for react-day-picker v10 rename",
-        "Pin function search_path and revoke public execute per supabase advisors",
-        "Don't drop index that backs the push_subscriptions constraint",
-        "Drop only via constraint to avoid dropping index backing it",
-        "Make calendar_events and push_subscriptions migrations idempotent",
-        "Rename out-of-order migration files to sort after remote history"
       ]
     }
   }
