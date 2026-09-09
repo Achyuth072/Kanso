@@ -52,6 +52,7 @@ export async function fetchCalendarEvents(
   client: any,
   calendarUrl: string,
   syncToken?: string,
+  timeRange?: { start: string; end: string },
 ): Promise<{
   events: Array<{ url: string; etag: string; data: string }>;
   syncToken: string;
@@ -90,6 +91,7 @@ export async function fetchCalendarEvents(
   // Full fetch for initial sync
   const objects = await client.fetchCalendarObjects({
     calendar: { url: calendarUrl },
+    timeRange,
   });
 
   return {

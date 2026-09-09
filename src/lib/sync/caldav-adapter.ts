@@ -75,8 +75,8 @@ class CalDAVAdapter implements SyncAdapter {
   }
 
   async fullSync(
-    _pastDays: number = 90,
-    _futureDays: number = 365,
+    pastDays: number = 90,
+    futureDays: number = 365,
   ): Promise<{
     events: RemoteEvent[];
     syncToken: string;
@@ -85,10 +85,20 @@ class CalDAVAdapter implements SyncAdapter {
       throw new Error("Adapter not initialized or calendar_url not set");
     }
 
+    const timeRange = {
+      start: new Date(
+        Date.now() - pastDays * 24 * 60 * 60 * 1000,
+      ).toISOString(),
+      end: new Date(
+        Date.now() + futureDays * 24 * 60 * 60 * 1000,
+      ).toISOString(),
+    };
+
     const result = await fetchCalendarEvents(
       this.client,
       this.externalCalendar.calendar_url,
       undefined, // No sync token = full sync
+      timeRange,
     );
 
     return {
