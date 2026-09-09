@@ -771,6 +771,7 @@ CREATE TABLE IF NOT EXISTS public.calendar_events (
 CREATE INDEX IF NOT EXISTS calendar_events_user_id_idx ON public.calendar_events (user_id);
 CREATE INDEX IF NOT EXISTS calendar_events_start_time_idx ON public.calendar_events (start_time);
 CREATE INDEX IF NOT EXISTS calendar_events_remote_id_idx ON public.calendar_events (remote_id) WHERE remote_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS calendar_events_user_ics_uid_key ON public.calendar_events (user_id, ics_uid) WHERE ics_uid IS NOT NULL;
 
 -- Updated At Trigger
 CREATE TRIGGER calendar_events_updated_at

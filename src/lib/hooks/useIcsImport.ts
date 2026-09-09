@@ -2,17 +2,33 @@
 
 import { useState } from "react";
 import * as Sentry from "@sentry/nextjs";
+import { useQueryClient } from "@tanstack/react-query";
 import { parseICSFile } from "@/lib/utils/ics-parser";
 import { notify } from "@/lib/notify";
 import { useHaptic } from "@/lib/hooks/useHaptic";
-import { useCreateCalendarEvent } from "@/lib/hooks/useCalendarEventMutations";
+import { calendarEventMutations } from "@/lib/mutations/calendar-event";
 import { createClient } from "@/lib/supabase/client";
 import { fetchAllRows } from "@/lib/supabase/paginate";
 import { isContentKeyUnavailableError } from "@/lib/supabase/wrapClient";
-import { dedupeIcsEvents } from "@/lib/import/dedupeIcsEvents";
+import { notifyLocalEdit } from "@/lib/sync/sync-scheduler";
+import {
+  dedupeIcsEvents,
+  isIcsUidConflict,
+} from "@/lib/import/dedupeIcsEvents";
+import type { CreateCalendarEventInput } from "@/lib/types/calendar-event";
 
-// ics_uid is deliberately outside FIELD_MAP, so it stays readable and this
-// stays a cheap indexed lookup rather than a decrypt-everything scan.
+export const ICS_CONFIRM_THRESHOLD = 50;
+
+export interface IcsImportPreview {
+  toCreate: CreateCalendarEventInput[];
+  totalParsed: number;
+  duplicateCount: number;
+  earliest: string | null;
+  latest: string | null;
+  parseErrors: unknown[];
+}
+
+// ics_uid is unencrypted (outside FIELD_MAP) for indexed lookup without full decryption.
 async function loadExistingIcsUids(): Promise<Set<string>> {
   const isGuest =
     typeof window !== "undefined" &&
@@ -43,31 +59,43 @@ async function loadExistingIcsUids(): Promise<Set<string>> {
   );
 }
 
+function dateRangeOf(events: CreateCalendarEventInput[]): {
+  earliest: string | null;
+  latest: string | null;
+} {
+  if (events.length === 0) return { earliest: null, latest: null };
+  let earliest = events[0].start_time;
+  let latest = events[0].start_time;
+  for (const event of events) {
+    if (event.start_time < earliest) earliest = event.start_time;
+    if (event.start_time > latest) latest = event.start_time;
+  }
+  return { earliest, latest };
+}
+
 export function useIcsImport() {
   const [isImporting, setIsImporting] = useState(false);
+  const [preview, setPreview] = useState<IcsImportPreview | null>(null);
   const { trigger } = useHaptic();
-  const createEvent = useCreateCalendarEvent();
+  const queryClient = useQueryClient();
 
-  const importIcs = async (file: File) => {
-    if (!file) return;
-
+  const prepareImport = async (
+    file: File,
+  ): Promise<IcsImportPreview | null> => {
     setIsImporting(true);
-    trigger("toggle");
-    const loadingToastId = notify.loading(`Importing ${file.name}...`);
-
     try {
       const { events: parsedEvents, errors } = await parseICSFile(file);
 
       if (parsedEvents.length === 0 && errors.length > 0) {
-        notify.error("Failed to parse ICS file", { id: loadingToastId });
+        notify.error("Failed to parse ICS file");
         trigger("thud");
-        return false;
+        return null;
       }
 
       if (parsedEvents.length === 0) {
-        notify.error("No valid events found in file", { id: loadingToastId });
+        notify.error("No valid events found in file");
         trigger("thud");
-        return false;
+        return null;
       }
 
       const { toCreate, skipped } = dedupeIcsEvents(
@@ -75,10 +103,43 @@ export function useIcsImport() {
         await loadExistingIcsUids(),
       );
 
-      if (toCreate.length === 0) {
+      const result: IcsImportPreview = {
+        toCreate,
+        totalParsed: parsedEvents.length,
+        duplicateCount: skipped,
+        ...dateRangeOf(toCreate),
+        parseErrors: errors,
+      };
+      if (result.toCreate.length >= ICS_CONFIRM_THRESHOLD) {
+        setPreview(result);
+      }
+      return result;
+    } catch (err) {
+      console.error("Failed to parse ICS:", err);
+      notify.error("Critical error during import");
+      trigger("thud");
+      return null;
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const cancelImport = () => setPreview(null);
+
+  const commitImport = async (
+    target: IcsImportPreview | null = preview,
+  ): Promise<boolean> => {
+    if (!target) return false;
+
+    setIsImporting(true);
+    trigger("toggle");
+    const loadingToastId = notify.loading("Importing events...");
+
+    try {
+      if (target.toCreate.length === 0) {
         notify.success(
-          skipped > 0
-            ? `Already imported — skipped ${skipped} duplicate ${skipped === 1 ? "event" : "events"}.`
+          target.duplicateCount > 0
+            ? `Already imported — skipped ${target.duplicateCount} duplicate ${target.duplicateCount === 1 ? "event" : "events"}.`
             : "No new events to import",
           { id: loadingToastId },
         );
@@ -87,18 +148,29 @@ export function useIcsImport() {
       }
 
       let importedCount = 0;
+      let conflictCount = 0;
       const failures: unknown[] = [];
-      for (const eventInput of toCreate) {
+      for (const eventInput of target.toCreate) {
         try {
-          await createEvent.mutateAsync(eventInput);
+          await calendarEventMutations.create(eventInput);
           importedCount++;
         } catch (err) {
-          failures.push(err);
+          if (isIcsUidConflict(err)) {
+            conflictCount++;
+          } else {
+            failures.push(err);
+          }
         }
       }
 
+      // Invalidate once for the whole batch to avoid per-event refetch and decryption.
+      queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
+      queryClient.invalidateQueries({ queryKey: ["calendar-tasks"] });
+      notifyLocalEdit();
+
+      const skippedTotal = target.duplicateCount + conflictCount;
       const detail = [
-        skipped > 0 ? `skipped ${skipped} duplicate` : null,
+        skippedTotal > 0 ? `skipped ${skippedTotal} duplicate` : null,
         failures.length > 0 ? `${failures.length} failed` : null,
       ].filter(Boolean);
 
@@ -110,9 +182,7 @@ export function useIcsImport() {
       );
       trigger("success");
 
-      // Locked-key failures aren't bugs (the "N failed" toast above already
-      // tells the user), and every row fails identically, so skip Sentry for
-      // those rather than spamming one duplicate report per row.
+      // Locked encryption keys are expected user state, not crashes; avoid Sentry spam.
       failures
         .filter((failure) => !isContentKeyUnavailableError(failure))
         .forEach((failure, index) => {
@@ -121,8 +191,10 @@ export function useIcsImport() {
           });
         });
 
-      if (errors.length > 0) {
-        notify.warning(`${errors.length} events had parsing warnings.`);
+      if (target.parseErrors.length > 0) {
+        notify.warning(
+          `${target.parseErrors.length} events had parsing warnings.`,
+        );
       }
 
       return true;
@@ -133,8 +205,15 @@ export function useIcsImport() {
       return false;
     } finally {
       setIsImporting(false);
+      setPreview(null);
     }
   };
 
-  return { importIcs, isImporting };
+  return {
+    prepareImport,
+    commitImport,
+    cancelImport,
+    preview,
+    isImporting,
+  };
 }

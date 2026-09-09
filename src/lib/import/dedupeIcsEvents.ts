@@ -12,6 +12,15 @@ function identityOf(event: CreateCalendarEventInput): string {
     : `time:${event.start_time}|${event.end_time}|${event.title}`;
 }
 
+// Postgres unique_violation (23505) — only calendar_events_user_ics_uid_key can conflict during import.
+export function isIcsUidConflict(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: unknown }).code === "23505"
+  );
+}
+
 export function dedupeIcsEvents(
   parsed: CreateCalendarEventInput[],
   existingUids: ReadonlySet<string>,

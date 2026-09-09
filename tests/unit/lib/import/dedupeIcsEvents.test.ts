@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { dedupeIcsEvents } from "@/lib/import/dedupeIcsEvents";
+import {
+  dedupeIcsEvents,
+  isIcsUidConflict,
+} from "@/lib/import/dedupeIcsEvents";
 import type { CreateCalendarEventInput } from "@/lib/types/calendar-event";
 
 function event(
@@ -79,5 +82,17 @@ describe("dedupeIcsEvents", () => {
 
     expect(result.toCreate).toHaveLength(1);
     expect(result.skipped).toBe(0);
+  });
+});
+
+describe("isIcsUidConflict", () => {
+  it("recognizes a Postgres unique_violation", () => {
+    expect(isIcsUidConflict({ code: "23505" })).toBe(true);
+  });
+
+  it("rejects other errors", () => {
+    expect(isIcsUidConflict({ code: "23503" })).toBe(false);
+    expect(isIcsUidConflict(new Error("boom"))).toBe(false);
+    expect(isIcsUidConflict(null)).toBe(false);
   });
 });

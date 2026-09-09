@@ -101,7 +101,19 @@ export function useAccountData() {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const prepared = remapAndPrepare(items as any[], table);
           const { error } = await supabase.from(table).insert(prepared);
-          if (error) throw error;
+          if (error) {
+            // Retry row-by-row on ics_uid conflict so one duplicate does not abort the restore.
+            if (table === "calendar_events" && error.code === "23505") {
+              for (const row of prepared) {
+                const { error: rowError } = await supabase
+                  .from(table)
+                  .insert(row);
+                if (rowError && rowError.code !== "23505") throw rowError;
+              }
+            } else {
+              throw error;
+            }
+          }
         }
       }
 

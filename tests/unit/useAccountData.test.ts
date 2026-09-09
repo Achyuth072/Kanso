@@ -123,4 +123,46 @@ describe("useAccountData", () => {
     expect(mockSupabase.from().delete).toHaveBeenCalled();
     expect(mockSupabase.from().eq).toHaveBeenCalledWith("user_id", "test-user");
   });
+
+  it("importData retries calendar_events row by row on an ics_uid conflict, skipping only the conflicting rows", async () => {
+    const { parseBackupZip } = await import("@/lib/backup/export-import");
+    vi.mocked(parseBackupZip).mockResolvedValueOnce({
+      metadata: { version: 1, exportedAt: "2024-01-01", appVersion: "1.0.0" },
+      tasks: [],
+      projects: [],
+      habits: [],
+      habit_entries: [],
+      focus_logs: [],
+      events: [
+        { id: "evt-1", ics_uid: "dupe" },
+        { id: "evt-2", ics_uid: "unique" },
+      ],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    const rowInserts: Array<{ ics_uid?: string }> = [];
+    mockQuery.insert.mockImplementation((payload: unknown) => {
+      if (Array.isArray(payload)) {
+        return Promise.resolve({
+          error: { code: "23505", message: "duplicate key value" },
+        });
+      }
+      const row = payload as { ics_uid?: string };
+      rowInserts.push(row);
+      return Promise.resolve({
+        error:
+          row.ics_uid === "dupe"
+            ? { code: "23505", message: "duplicate key value" }
+            : null,
+      });
+    });
+
+    const { result } = renderHook(() => useAccountData());
+    const mockFile = new File(["test"], "backup.zip", {
+      type: "application/zip",
+    });
+
+    await expect(result.current.importData(mockFile)).resolves.not.toThrow();
+    expect(rowInserts.map((r) => r.ics_uid)).toEqual(["dupe", "unique"]);
+  });
 });
