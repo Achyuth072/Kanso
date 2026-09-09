@@ -22,6 +22,7 @@
     "analyze": "npx cross-env ANALYZE=true npm run build",
     "dead-code": "npx knip",
     "unused-deps": "npx depcheck",
+    "ast-grep": "ast-grep scan",
     "copy-wasm": "node -e \"require('fs').copyFileSync('node_modules/sql.js/dist/sql-wasm.wasm', 'public/sql-wasm.wasm')\"",
     "preview": "node scripts/release.cjs --channel=preview",
     "release": "node scripts/release.cjs --channel=stable",

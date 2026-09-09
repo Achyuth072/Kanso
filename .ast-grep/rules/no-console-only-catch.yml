@@ -1,0 +1,31 @@
+id: no-console-only-catch
+language: TypeScript
+severity: warning
+rule:
+  kind: catch_clause
+  has:
+    field: body
+    kind: statement_block
+    all:
+      - has:
+          kind: expression_statement
+          has:
+            pattern: console.$METHOD($$$ARGS)
+          nthChild:
+            position: 1
+            ofRule:
+              not:
+                kind: comment
+      - has:
+          kind: expression_statement
+          has:
+            pattern: console.$METHOD($$$ARGS)
+          nthChild:
+            position: 1
+            reverse: true
+            ofRule:
+              not:
+                kind: comment
+message: >
+  A catch block that only logs via console.* is a lint error in this repo —
+  rethrow, surface to the UI, or report to Sentry instead of swallowing it.

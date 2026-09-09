@@ -1,0 +1,15 @@
+id: no-direct-supabase-from
+language: TypeScript
+severity: warning
+files:
+  - "src/components/**/*.ts"
+  - "src/components/**/*.tsx"
+  - "app/**/*.ts"
+  - "app/**/*.tsx"
+ignores:
+  - "app/api/**"
+rule:
+  pattern: supabase.from($TABLE)
+message: >
+  Don't call supabase.from() directly outside src/lib/hooks or src/lib/mutations.
+  Add or extend a React Query hook/mutation instead.
