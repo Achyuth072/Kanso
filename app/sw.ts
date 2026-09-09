@@ -279,6 +279,7 @@ self.addEventListener("pushsubscriptionchange", (event) => {
         console.log("[SW] Push subscription re-synced successfully");
       } catch (err) {
         console.error("[SW] Failed to re-sync push subscription:", err);
+        throw err;
       }
     })(),
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useRef } from "react";
+import * as Sentry from "@sentry/nextjs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { focusMutations } from "@/lib/mutations/focus";
 import { useUiStore } from "@/lib/store/uiStore";
@@ -95,20 +96,13 @@ export function useFocusTimer() {
           const won = await claimTimerCompletion(prevState.endsAt);
           if (!won) return;
         } catch (err) {
-          // Fail open to avoid dropping completed sessions on network errors.
-          console.warn(
-            "Timer completion claim failed; proceeding locally:",
-            err,
-          );
+          Sentry.captureException(err);
         }
       } else {
         try {
           await syncToServer();
         } catch (err) {
-          console.warn(
-            "Timer completion sync failed; proceeding locally:",
-            err,
-          );
+          Sentry.captureException(err);
         }
       }
 

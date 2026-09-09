@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import * as Sentry from "@sentry/nextjs";
 import { useUiStore } from "@/lib/store/uiStore";
 import { removePushSubscription, syncPushSubscription } from "@/lib/push-api";
 import { displayNotification } from "@/lib/notifications";
@@ -75,7 +76,7 @@ export function usePushNotifications() {
       try {
         await removePushSubscription(endpoint);
       } catch (error) {
-        console.error("Error removing subscription from backend:", error);
+        Sentry.captureException(error);
       }
     },
     [isGuestMode],
@@ -86,7 +87,7 @@ export function usePushNotifications() {
       try {
         await sub.unsubscribe();
       } catch (error) {
-        console.error("Error unsubscribing from push service:", error);
+        Sentry.captureException(error);
       }
 
       await removeSubscriptionFromBackend(sub.endpoint);
@@ -224,7 +225,7 @@ export function usePushNotifications() {
         const registration = await getServiceWorkerRegistration();
         await displayNotification(registration, title, options);
       } catch (error) {
-        console.error("Error showing notification:", error);
+        Sentry.captureException(error);
       }
     },
     [isSupported, permission, getServiceWorkerRegistration],
@@ -243,7 +244,7 @@ export function usePushNotifications() {
           await subscribeToPush();
         }
       } catch (error) {
-        console.error("Error initializing push subscription:", error);
+        Sentry.captureException(error);
       }
     };
     initSubscription();
@@ -289,7 +290,7 @@ export function usePushNotifications() {
           await subscribeToPush();
         }
       } catch (error) {
-        console.error("Error re-validating push subscription:", error);
+        Sentry.captureException(error);
       }
     };
 
