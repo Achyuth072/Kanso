@@ -360,7 +360,8 @@ function AppShellContent({ children }: AppShellProps) {
               pathname === "/calendar" ||
                 isFocus ||
                 pathname === "/" ||
-                pathname === "/habits"
+                pathname === "/habits" ||
+                pathname === "/settings"
                 ? "overflow-hidden"
                 : "overflow-y-auto overflow-x-hidden scrollbar-hide",
               !hideMobileNav &&
