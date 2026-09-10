@@ -10,6 +10,17 @@ import {
 } from "@/lib/mock/mock-store";
 import type { Task } from "@/lib/types/task";
 
+function hasRealContent(data: GuestData): boolean {
+  return (
+    (data.tasks?.length ?? 0) > 0 ||
+    (data.habits?.length ?? 0) > 0 ||
+    (data.projects?.length ?? 0) > 0 ||
+    (data.events?.length ?? 0) > 0 ||
+    (data.habit_entries?.length ?? 0) > 0 ||
+    (data.focus_logs?.length ?? 0) > 0
+  );
+}
+
 export function useMigrationStrategy() {
   const { user, isGuestMode } = useAuth();
   const [isMigrating, setIsMigrating] = useState(false);
@@ -33,13 +44,20 @@ export function useMigrationStrategy() {
       return;
     }
 
+    // Prevents fabricated history from becoming the user's real streaks/scores. See ADR 0014.
+    const guestData = stripDemoData(JSON.parse(guestDataStr) as GuestData);
+
+    // Avoid reload loop: mock-store re-seeds demo data on every load.
+    if (!hasRealContent(guestData)) {
+      localStorage.removeItem("kanso_guest_mode");
+      document.cookie = "kanso_guest_mode=; path=/; max-age=0";
+      return;
+    }
+
     migrationInProgress.current = true;
 
     try {
       setIsMigrating(true);
-      // Prevents fabricated history from becoming the user's real streaks/scores. See ADR 0014.
-      const guestData = stripDemoData(JSON.parse(guestDataStr) as GuestData);
-
       // eslint-disable-next-line local/no-unbounded-supabase-select -- project definitions, not tasks
       const { data: userProjects } = await supabase
         .from("projects")

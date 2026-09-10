@@ -125,7 +125,7 @@ describe("useMigrationStrategy", () => {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
-        tasks: [],
+        tasks: [{ id: "g-t1", content: "Task 1", created_at: "2023-01-01" }],
         projects: [],
         habits: [],
         habit_entries: [],
@@ -174,7 +174,7 @@ describe("useMigrationStrategy", () => {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
-        tasks: [],
+        tasks: [{ id: "g-t1", content: "Task 1", created_at: "2023-01-01" }],
         projects: [],
         habits: [],
         habit_entries: [],
