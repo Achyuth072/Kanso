@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.43.0-preview.4",
+    "date": "2026-09-10",
+    "channel": "preview",
+    "sections": {
+      "Fixed": [
+        "Resume guest migration after partial failure instead of losing data"
+      ]
+    }
+  },
+  {
     "version": "1.43.0-preview.3",
     "date": "2026-09-10",
     "channel": "preview",
@@ -766,19 +776,6 @@
       "Fixed": [
         "Drop y-transform from page transition to stop PiP button flash on /focus",
         "Make /login scrollable so content isn't cut off on short mobile viewports"
-      ]
-    }
-  },
-  {
-    "version": "1.26.2",
-    "date": "2026-07-24",
-    "channel": "stable",
-    "sections": {
-      "Fixed": [
-        "Only show dialog close button focus ring on keyboard focus",
-        "Always render habits page header, even when the list is empty",
-        "Reset timer settings to live saved values",
-        "Add haptic feedback to toggle group items on mobile"
       ]
     }
   }
