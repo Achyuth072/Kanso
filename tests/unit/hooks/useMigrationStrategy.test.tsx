@@ -270,6 +270,8 @@ describe("useMigrationStrategy", () => {
 
     setupMockSequence([
       { data: [] },
+      { data: [], count: 0 },
+      { data: [], count: 0 },
       { data: { id: "s-p1" } },
       { data: [{ id: "s-t1", content: "Task 1", created_at: "2023-01-01" }] },
     ]);
@@ -333,6 +335,8 @@ describe("useMigrationStrategy", () => {
 
     setupMockSequence([
       { data: [] },
+      { data: [], count: 0 },
+      { data: [], count: 0 },
       {
         data: [
           { id: "new-parent", content: "Parent", created_at: "2023-01-01" },
@@ -560,6 +564,68 @@ describe("useMigrationStrategy", () => {
 
       await waitFor(() => expect(raw.rawRows("tasks")).toHaveLength(0));
       expect(window.location.reload).not.toHaveBeenCalled();
+    });
+
+    it("MIG-ENC-03: a retry after a partial failure resumes instead of re-uploading or silently giving up", async () => {
+      keyStoreState.key = await generateMasterKey();
+      let eventsInsertAttempts = 0;
+      const raw = createFakeSupabaseClient(
+        {},
+        {
+          failWrite: ({ table, kind }) => {
+            if (table === "calendar_events" && kind === "insert") {
+              eventsInsertAttempts += 1;
+              if (eventsInsertAttempts === 1) {
+                return { message: "simulated transient failure" };
+              }
+            }
+            return null;
+          },
+        },
+      );
+      vi.mocked(createClient).mockReturnValue(
+        wrapSupabaseClient(raw, FIELD_MAP) as unknown as ReturnType<
+          typeof createClient
+        >,
+      );
+
+      const guestData = {
+        tasks: [
+          { id: "g-t1", content: "Only real task", created_at: "2023-01-01" },
+        ],
+        projects: [],
+        habits: [],
+        habit_entries: [],
+        focus_logs: [],
+        events: [
+          {
+            id: "g-e1",
+            title: "Only real event",
+            remote_calendar_id: null,
+            created_at: "2023-01-01",
+          },
+        ],
+      };
+      localStorage.setItem("kanso_guest_mode", "true");
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(guestData));
+      mockAuthAsRealUser();
+
+      renderHook(() => useMigrationStrategy());
+
+      // First attempt: the task lands, then the events insert fails.
+      await waitFor(() => expect(raw.rawRows("tasks")).toHaveLength(1));
+      await waitFor(() => expect(eventsInsertAttempts).toBe(1));
+      expect(window.location.reload).not.toHaveBeenCalled();
+      // Guest data must survive so a retry has something to resume from.
+      expect(localStorage.getItem(STORAGE_KEY)).not.toBeNull();
+
+      // Simulate the "reload" the error toast promises: a fresh mount.
+      renderHook(() => useMigrationStrategy());
+
+      await waitFor(() => expect(window.location.reload).toHaveBeenCalled());
+      expect(raw.rawRows("tasks")).toHaveLength(1);
+      expect(raw.rawRows("calendar_events")).toHaveLength(1);
+      expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
     });
   });
 });
