@@ -1,5 +1,23 @@
 [
   {
+    "version": "1.43.0-preview.2",
+    "date": "2026-09-10",
+    "channel": "preview",
+    "sections": {
+      "Added": [
+        "Confirm large ics imports, batch invalidation, race-proof dedup"
+      ],
+      "Fixed": [
+        "Seed guest demo data with an injectable RNG for deterministic tests",
+        "Make caldav-adapter honour pastDays/futureDays sync window",
+        "Key guest migration off guest data, not the cleared flag",
+        "Settings scrolls its content pane, not the whole document",
+        "Replace amber/raw-blue colors with palette tokens in alerts",
+        "Report or rethrow console-only catch blocks in push/timer/sw code"
+      ]
+    }
+  },
+  {
     "version": "1.43.0-preview.1",
     "date": "2026-09-09",
     "channel": "preview",
@@ -763,33 +781,6 @@
         "Fix habit heatmap empty-cell contrast and scroll boundary clipping",
         "Extend habit heatmap to a full 12-month grid for better visibility",
         "Guard Notification access so iOS Safari/Chrome tabs don't crash on load"
-      ]
-    }
-  },
-  {
-    "version": "1.26.0",
-    "date": "2026-07-22",
-    "channel": "stable",
-    "sections": {
-      "Added": [
-        "Derive changelog entries and version bumps from commits on both release channels, supporting curation choices on stable releases and raw-commit previews in a review loop",
-        "Wire provenance capture and habit frequency tracking into the uhabits import flow for streak fidelity",
-        "Implement guest mode management in AuthProvider",
-        "Add /api/health uptime-monitor endpoint"
-      ],
-      "Improved": [
-        "Batch uhabits import habit creation with a prefetched sort_order",
-        "Rework guest mode seed data generation"
-      ],
-      "Fixed": [
-        "Current streak now reports the most-recent run within a pending window",
-        "Update UI to indicate beta status for Loop Habit Tracker and improve error message clarity",
-        "Paginate habit_entries fetch, stats, and account data export to load history past 1000 rows",
-        "Fix deployed uhabits import by copying sql.js wasm on build and excluding wasm assets from auth middleware",
-        "Bulk-write guest habit entries and report storage write errors to Sentry instead of swallowing them",
-        "Replace UI emoji with lucide icons and strip them from notification titles",
-        "Update classNames/props for react-day-picker v10 rename",
-        "Pin function search_path and revoke public execute per supabase advisors"
       ]
     }
   }
