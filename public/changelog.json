@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.43.0-preview.3",
+    "date": "2026-09-10",
+    "channel": "preview",
+    "sections": {
+      "Fixed": [
+        "Prevent migration reload loop on demo-only guest data"
+      ]
+    }
+  },
+  {
     "version": "1.43.0-preview.2",
     "date": "2026-09-10",
     "channel": "preview",
@@ -769,18 +779,6 @@
         "Always render habits page header, even when the list is empty",
         "Reset timer settings to live saved values",
         "Add haptic feedback to toggle group items on mobile"
-      ]
-    }
-  },
-  {
-    "version": "1.26.1",
-    "date": "2026-07-23",
-    "channel": "stable",
-    "sections": {
-      "Fixed": [
-        "Fix habit heatmap empty-cell contrast and scroll boundary clipping",
-        "Extend habit heatmap to a full 12-month grid for better visibility",
-        "Guard Notification access so iOS Safari/Chrome tabs don't crash on load"
       ]
     }
   }
