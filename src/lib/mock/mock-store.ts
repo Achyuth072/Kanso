@@ -1,8 +1,3 @@
-/**
- * Mock Data Store for Guest Mode
- * Provides in-memory CRUD operations with localStorage persistence
- */
-
 import { isWeekend } from "date-fns";
 import * as Sentry from "@sentry/nextjs";
 import type { Task, Project } from "@/lib/types/task";
@@ -28,6 +23,17 @@ export interface GuestData {
 
 type BackupPayload = Omit<BackupData, "metadata">;
 
+// Mulberry32 PRNG for deterministic test seeding.
+export function createSeededRandom(seed: number): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 class MockStore {
   private data: GuestData;
 
@@ -41,7 +47,7 @@ class MockStore {
     }
   }
 
-  private getInitialData(): GuestData {
+  private getInitialData(rng: () => number = Math.random): GuestData {
     const now = new Date();
     const nowIso = now.toISOString();
     const oneDay = 86400000;
@@ -58,7 +64,7 @@ class MockStore {
         id: pWork,
         user_id: "guest",
         name: "Work",
-        color: "#4B6CB7", // Kagelin Blue
+        color: "#4B6CB7",
         view_style: "list",
         is_inbox: false,
         is_archived: false,
@@ -69,7 +75,7 @@ class MockStore {
         id: pPersonal,
         user_id: "guest",
         name: "Personal",
-        color: "#839B82", // Muted Sage
+        color: "#839B82",
         view_style: "list",
         is_inbox: false,
         is_archived: false,
@@ -80,7 +86,7 @@ class MockStore {
         id: pSide,
         user_id: "guest",
         name: "Side Project",
-        color: "#8B6B80", // Plum
+        color: "#8B6B80",
         view_style: "board",
         is_inbox: false,
         is_archived: false,
@@ -95,13 +101,13 @@ class MockStore {
     const entries: HabitEntry[] = [];
     const events: CalendarEvent[] = [];
 
-    const generateId = () => Math.random().toString(36).substr(2, 9);
+    const generateId = () => rng().toString(36).substr(2, 9);
     const pick = <T>(options: readonly T[]) =>
-      options[Math.floor(Math.random() * options.length)];
+      options[Math.floor(rng() * options.length)];
     const dayAt = (dayOffset: number) =>
       new Date(now.getTime() + dayOffset * oneDay);
     const randomPriority = (min: 1 | 2 | 3, max: 3 | 4) =>
-      (min + Math.floor(Math.random() * (max - min + 1))) as 1 | 2 | 3 | 4;
+      (min + Math.floor(rng() * (max - min + 1))) as 1 | 2 | 3 | 4;
 
     const deepWork = [
       "Deep work: checkout refactor",
@@ -181,15 +187,13 @@ class MockStore {
       } = options;
       const date = dayAt(dayOffset);
 
-      const randomHour = isEvening
-        ? 18 + Math.random() * 4 // 18:00 - 22:00
-        : 8 + Math.random() * 6; // 08:00 - 14:00
-      const randomMinute = Math.floor(Math.random() * 60);
+      const randomHour = isEvening ? 18 + rng() * 4 : 8 + rng() * 6;
+      const randomMinute = Math.floor(rng() * 60);
       date.setHours(Math.floor(randomHour), randomMinute, 0, 0);
 
       const dueDate = date.toISOString();
       const isPast = dayOffset < 0;
-      const isCompleted = isPast && Math.random() < completionRate;
+      const isCompleted = isPast && rng() < completionRate;
 
       const taskId = `task-${generateId()}`;
 
@@ -216,7 +220,7 @@ class MockStore {
       });
 
       if (isCompleted) {
-        const durationSeconds = 900 + Math.floor(Math.random() * 7200); // 15m to 2h
+        const durationSeconds = 900 + Math.floor(rng() * 7200);
         logs.push({
           id: `log-${generateId()}`,
           user_id: "guest",
@@ -233,33 +237,27 @@ class MockStore {
       return taskId;
     };
 
-    // Generate Past 365 Days (History for Stats)
     for (let i = -365; i < 0; i++) {
       const date = dayAt(i);
       const monthOffset = Math.abs(i) / 30;
 
-      // Higher probability of activity overall to fill heatmap
-      let probability = 0.8; // Boosted for positive stats
+      // Weight activity toward recent months to populate the heatmap.
+      let probability = 0.8;
       if (monthOffset > 4) probability = 0.6;
       if (monthOffset > 8) probability = 0.45;
 
       if (Math.abs(i) <= 30) probability = 0.92;
 
-      if (Math.random() > probability) continue;
+      if (rng() > probability) continue;
 
       if (isWeekend(date)) {
-        const count = Math.random() > 0.4 ? 2 : 1;
+        const count = rng() > 0.4 ? 2 : 1;
         for (let t = 0; t < count; t++) {
-          createTask(
-            pick(weekendLife),
-            i,
-            Math.random() > 0.75 ? pSide : pPersonal,
-            {
-              priority: randomPriority(3, 4),
-              isEvening: Math.random() > 0.5,
-              completionRate: 0.85,
-            },
-          );
+          createTask(pick(weekendLife), i, rng() > 0.75 ? pSide : pPersonal, {
+            priority: randomPriority(3, 4),
+            isEvening: rng() > 0.5,
+            completionRate: 0.85,
+          });
         }
         continue;
       }
@@ -271,14 +269,14 @@ class MockStore {
 
       const collabCount = Math.abs(i) <= 30 ? 3 : 2;
       for (let t = 0; t < collabCount; t++) {
-        if (Math.random() > 0.7) continue;
+        if (rng() > 0.7) continue;
         createTask(pick(collabWork), i, pWork, {
           priority: randomPriority(1, 3),
           completionRate: 0.75,
         });
       }
 
-      if (Math.random() < 0.8) {
+      if (rng() < 0.8) {
         createTask(pick(eveningLife), i, pPersonal, {
           isEvening: true,
           completionRate: 0.8,
@@ -330,15 +328,15 @@ class MockStore {
       }
 
       if (isWeekend(dayAt(i))) {
-        const count = Math.random() > 0.5 ? 2 : 1;
+        const count = rng() > 0.5 ? 2 : 1;
         for (let t = 0; t < count; t++) {
           createTask(pick(weekendLife), i, pPersonal, {
-            isEvening: Math.random() > 0.5,
+            isEvening: rng() > 0.5,
           });
         }
       } else {
-        const isHighDensity = Math.random() > 0.8;
-        const count = isHighDensity ? 4 : Math.random() > 0.4 ? 2 : 0;
+        const isHighDensity = rng() > 0.8;
+        const count = isHighDensity ? 4 : rng() > 0.4 ? 2 : 0;
 
         for (let t = 0; t < count; t++) {
           createTask(t === 0 ? pick(deepWork) : pick(collabWork), i, pWork, {
@@ -346,7 +344,7 @@ class MockStore {
           });
         }
 
-        if (Math.random() < 0.7) {
+        if (rng() < 0.7) {
           createTask(pick(eveningLife), i, pPersonal, { isEvening: true });
         }
       }
@@ -356,9 +354,7 @@ class MockStore {
         createTask("Weekly planning", i, pPersonal, { priority: 1 });
     }
 
-    // Recurring task Series: ~16 weeks of history + one active Occurrence, all
-    // sharing a recurring_series_id, so guest-mode Task Insights (streaks,
-    // on-time %, History heatmap) has more than a single data point to chart.
+    // Seed historical occurrences so Task Insights has data to chart.
     const seriesId = `series-${generateId()}`;
     const weeklyRecurrence: RecurrenceRule = { freq: "WEEKLY", interval: 1 };
     const seriesWeeks = 16;
@@ -368,14 +364,11 @@ class MockStore {
       dueDate.setHours(9, 0, 0, 0);
 
       const isActiveOccurrence = w === 0;
-      // ~80% completion rate for past Occurrences; the current one is pending.
-      const isCompleted = !isActiveOccurrence && Math.random() > 0.2;
+      const isCompleted = !isActiveOccurrence && rng() > 0.2;
 
       let completedAt: string | null = null;
       if (isCompleted) {
-        // ~25% of completions run up to 2 days late.
-        const lateMs =
-          Math.random() > 0.75 ? Math.floor(Math.random() * 2 * oneDay) : 0;
+        const lateMs = rng() > 0.75 ? Math.floor(rng() * 2 * oneDay) : 0;
         completedAt = new Date(dueDate.getTime() + lateMs).toISOString();
       }
 
@@ -415,7 +408,7 @@ class MockStore {
         user_id: "guest",
         name: "Drink Water",
         description: "8 glasses a day",
-        color: "#5B7C99", // Earthy Blue
+        color: "#5B7C99",
         icon: "Droplet",
         created_at: nowIso,
         updated_at: nowIso,
@@ -434,7 +427,7 @@ class MockStore {
         user_id: "guest",
         name: "Morning Exercise",
         description: "30 mins activity",
-        color: "#A3B18A", // Muted Mint
+        color: "#A3B18A",
         icon: "Dumbbell",
         created_at: nowIso,
         updated_at: nowIso,
@@ -453,7 +446,7 @@ class MockStore {
         user_id: "guest",
         name: "Read",
         description: "20 pages",
-        color: "#9F8189", // Lavender
+        color: "#9F8189",
         icon: "Book",
         created_at: nowIso,
         updated_at: nowIso,
@@ -472,7 +465,7 @@ class MockStore {
         user_id: "guest",
         name: "Sketch",
         description: "Fill a page",
-        color: "#8B6B80", // Plum
+        color: "#8B6B80",
         icon: "Pencil",
         created_at: nowIso,
         updated_at: nowIso,
@@ -491,7 +484,7 @@ class MockStore {
         user_id: "guest",
         name: "Code for Fun",
         description: "Commit something small",
-        color: "#6B8E8A", // Muted Teal
+        color: "#6B8E8A",
         icon: "Code",
         created_at: nowIso,
         updated_at: nowIso,
@@ -510,7 +503,7 @@ class MockStore {
         user_id: "guest",
         name: "Log Off by 18:00",
         description: "Close the laptop, start the evening",
-        color: "#A48C7A", // Warm Taupe
+        color: "#A48C7A",
         icon: "Moon",
         created_at: nowIso,
         updated_at: nowIso,
@@ -538,7 +531,7 @@ class MockStore {
         habitId: hWater,
         weekday: 0.9,
         weekend: 0.8,
-        value: () => 4 + Math.floor(Math.random() * 7), // 4-10 glasses
+        value: () => 4 + Math.floor(rng() * 7),
       },
       { habitId: hExercise, weekday: 0.85, weekend: 0.45 },
       { habitId: hRead, weekday: 0.6, weekend: 0.7 },
@@ -553,7 +546,7 @@ class MockStore {
 
       for (const pattern of habitPatterns) {
         const probability = isWeekend(date) ? pattern.weekend : pattern.weekday;
-        if (Math.random() >= probability) continue;
+        if (rng() >= probability) continue;
 
         entries.push({
           id: `entry-${generateId()}`,
@@ -587,13 +580,13 @@ class MockStore {
       const date = dayAt(i);
       const weekend = isWeekend(date);
 
-      if (Math.random() > 0.4) {
+      if (rng() > 0.4) {
         const randomHour = weekend
-          ? 11 + Math.floor(Math.random() * 8) // 11am to 6pm
-          : 9 + Math.floor(Math.random() * 8); // 9am to 4pm
+          ? 11 + Math.floor(rng() * 8)
+          : 9 + Math.floor(rng() * 8);
         const startTime = new Date(date);
         startTime.setHours(randomHour, 0, 0, 0);
-        const endTime = new Date(startTime.getTime() + 3600000); // 1 hour
+        const endTime = new Date(startTime.getTime() + 3600000);
 
         const id = `event-${generateId()}`;
         const title = weekend ? pick(weekendEvents) : pick(workdayEvents);
@@ -602,11 +595,11 @@ class MockStore {
           user_id: "guest",
           title: i === 0 && !weekend ? "Team catch up" : title,
           description: null,
-          location: Math.random() > 0.5 ? pick(mockLocations) : null,
+          location: rng() > 0.5 ? pick(mockLocations) : null,
           start_time: startTime.toISOString(),
           end_time: endTime.toISOString(),
           all_day: false,
-          color: "#4B6CB7", // Kagelin brand
+          color: "#4B6CB7",
           category: "event",
           recurrence_rule: null,
           remote_id: null,
@@ -657,10 +650,7 @@ class MockStore {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
     } catch (error) {
-      // Never swallow: a failed write means the guest's data is gone on
-      // reload, and a silent success toast is worse than a visible error.
-      // Reported here rather than at the call sites: this is the only place
-      // guest data reaches storage, so every write is covered once.
+      // Central write choke point: report failure once and never swallow quota errors.
       Sentry.captureException(error);
       throw new Error(
         "Failed to save guest data — browser storage may be full.",
@@ -714,7 +704,7 @@ class MockStore {
       updated_at: now,
     };
 
-    // A fresh-id Occurrence of a seeded Series (spawned by taskMutations.toggle) is still demo content.
+    // Inherit seed status if spawned from a demo recurring series.
     if (
       newTask.recurring_series_id &&
       this.data.tasks.some(
@@ -917,10 +907,7 @@ class MockStore {
     return true;
   }
 
-  // Idempotent value-set (mirrors the Supabase upsert): value 0 clears the day,
-  // value > 0 writes that exact value. Repeated calls with the same value
-  // converge instead of flipping, so optimistic double-taps don't desync the
-  // cache from the store.
+  // Idempotent upsert matching Supabase semantics so optimistic retries converge.
   setHabitEntry(
     habitId: string,
     date: string,
@@ -1017,7 +1004,6 @@ class MockStore {
     return true;
   }
 
-  // Backup Restore Operations (preserve IDs and timestamps)
   restoreProject(project: Project): void {
     this.data.projects.push(project);
     this.saveToStorage();
@@ -1072,25 +1058,22 @@ class MockStore {
     this.saveToStorage();
   }
 
-  // Lets telemetry exempt interactions with demo content.
   isSeedId(id: string): boolean {
     return (this.data.seed_ids ?? []).includes(id);
   }
 
-  // True while any Demo item remains. See CONTEXT.md → Guest showcase content
-  // → Demo mode.
+  // See CONTEXT.md → Guest showcase content → Demo mode.
   isInDemoMode(): boolean {
     return (this.data.seed_ids ?? []).length > 0;
   }
 
-  // Deleting a seeded item should stop counting it toward Demo mode.
   private unmarkSeedId(id: string): void {
     if (!this.data.seed_ids?.includes(id)) return;
     this.data.seed_ids = this.data.seed_ids.filter((seedId) => seedId !== id);
   }
 
-  reset(): void {
-    this.data = this.getInitialData();
+  reset(rng: () => number = Math.random): void {
+    this.data = this.getInitialData(rng);
     this.saveToStorage();
   }
 

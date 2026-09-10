@@ -1,9 +1,16 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import * as Sentry from "@sentry/nextjs";
-import { mockStore, STORAGE_KEY, stripDemoData } from "@/lib/mock/mock-store";
+import {
+  mockStore,
+  STORAGE_KEY,
+  stripDemoData,
+  createSeededRandom,
+} from "@/lib/mock/mock-store";
 import type { HabitEntry } from "@/lib/types/habit";
 
 vi.mock("@sentry/nextjs", () => ({ captureException: vi.fn() }));
+
+const seededReset = () => mockStore.reset(createSeededRandom(1));
 
 const makeEntries = (count: number): HabitEntry[] =>
   Array.from({ length: count }, (_, i) => ({
@@ -16,9 +23,7 @@ const makeEntries = (count: number): HabitEntry[] =>
 
 describe("MockStore (Guest Mode Data)", () => {
   beforeEach(() => {
-    // Clear localStorage before each test
     localStorage.clear();
-    // Reset store state
     mockStore.clearData();
   });
 
@@ -53,7 +58,6 @@ describe("MockStore (Guest Mode Data)", () => {
     expect(mockStore.getTasks()).toHaveLength(1);
     expect(mockStore.getTasks()[0].content).toBe("Test Task");
 
-    // Verify localStorage
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     expect(stored.tasks).toHaveLength(1);
     expect(stored.tasks[0].content).toBe("Test Task");
@@ -85,7 +89,6 @@ describe("MockStore (Guest Mode Data)", () => {
     expect(updated?.content).toBe("Updated Content");
     expect(mockStore.getTask(task.id)?.content).toBe("Updated Content");
 
-    // Verify localStorage
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     expect(stored.tasks[0].content).toBe("Updated Content");
   });
@@ -98,26 +101,23 @@ describe("MockStore (Guest Mode Data)", () => {
   });
 
   it("should seed a recurring task Series in initial data", () => {
-    mockStore.reset();
+    seededReset();
 
     const seriesTasks = mockStore
       .getTasks()
       .filter((t) => t.recurring_series_id !== null);
 
-    // At least two Occurrences sharing one recurring_series_id
     expect(seriesTasks.length).toBeGreaterThanOrEqual(2);
     const seriesIds = new Set(seriesTasks.map((t) => t.recurring_series_id));
     expect(seriesIds.size).toBe(1);
 
-    // The Series has both a completed past Occurrence and an active one,
-    // and every member carries a recurrence rule.
     expect(seriesTasks.some((t) => t.is_completed)).toBe(true);
     expect(seriesTasks.some((t) => !t.is_completed)).toBe(true);
     expect(seriesTasks.every((t) => t.recurrence !== null)).toBe(true);
   });
 
   it("recognizes seeded habit and task ids as seed ids, and survives a reload", () => {
-    mockStore.reset();
+    seededReset();
 
     const seedHabitId = mockStore.getHabits()[0].id;
     const seedTaskId = mockStore.getTasks()[0].id;
@@ -125,9 +125,6 @@ describe("MockStore (Guest Mode Data)", () => {
     expect(mockStore.isSeedId(seedTaskId)).toBe(true);
     expect(mockStore.isSeedId("user-created-id")).toBe(false);
 
-    // Simulate a page reload: a fresh MockStore instance re-reads the same
-    // localStorage blob instead of regenerating (getInitialData only runs
-    // once per guest), so the seed-id set must round-trip through storage.
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     expect(stored.seed_ids).toEqual(
       expect.arrayContaining([seedHabitId, seedTaskId]),
@@ -135,7 +132,7 @@ describe("MockStore (Guest Mode Data)", () => {
   });
 
   it("marks seeded projects and events as demo items too", () => {
-    mockStore.reset();
+    seededReset();
 
     for (const project of mockStore.getProjects()) {
       expect(mockStore.isSeedId(project.id)).toBe(true);
@@ -148,13 +145,13 @@ describe("MockStore (Guest Mode Data)", () => {
   });
 
   it("has no seed ids after clearData or restoreBackup — those aren't demo content", () => {
-    mockStore.reset();
+    seededReset();
     mockStore.clearData();
     expect(mockStore.isSeedId("anything")).toBe(false);
   });
 
   it("reports Demo mode while a seeded item remains, and leaves it once cleared", () => {
-    mockStore.reset();
+    seededReset();
     expect(mockStore.isInDemoMode()).toBe(true);
 
     mockStore.clearData();
@@ -162,7 +159,7 @@ describe("MockStore (Guest Mode Data)", () => {
   });
 
   it("exits Demo mode once every seeded item has been deleted individually", () => {
-    mockStore.reset();
+    seededReset();
     expect(mockStore.isInDemoMode()).toBe(true);
 
     for (const task of mockStore.getTasks()) mockStore.deleteTask(task.id);
@@ -175,7 +172,7 @@ describe("MockStore (Guest Mode Data)", () => {
   });
 
   it("propagates the seed exemption to a new occurrence spawned from a seeded recurring series", () => {
-    mockStore.reset();
+    seededReset();
     const seedSeriesId = mockStore
       .getTasks()
       .find((t) => t.recurring_series_id !== null)?.recurring_series_id;
@@ -192,7 +189,7 @@ describe("MockStore (Guest Mode Data)", () => {
   });
 
   it("does not exempt a new occurrence of a series the guest created themselves", () => {
-    mockStore.reset();
+    seededReset();
     const ownSeriesId = "user-series-1";
     const firstOwn = mockStore.addTask({
       content: "My recurring task",
@@ -227,7 +224,7 @@ describe("stripDemoData", () => {
   });
 
   it("removes demo tasks and habits while keeping the guest's own", () => {
-    mockStore.reset();
+    seededReset();
     const own = mockStore.addTask({
       content: "My own task",
       is_completed: false,
@@ -242,7 +239,7 @@ describe("stripDemoData", () => {
   });
 
   it("cascades to habit entries and focus logs, so no fabricated history survives, but the guest's own survives with it", () => {
-    mockStore.reset();
+    seededReset();
     const ownTask = mockStore.addTask({
       content: "My own task",
       is_completed: false,
@@ -273,7 +270,7 @@ describe("stripDemoData", () => {
     if (!ownEntry) throw new Error("expected setHabitEntry to create an entry");
 
     const raw = readGuestData();
-    expect(raw.habit_entries.length).toBeGreaterThan(1); // demo entries + our own
+    expect(raw.habit_entries.length).toBeGreaterThan(1);
     expect(raw.focus_logs.some((l) => l.task_id !== null)).toBe(true);
 
     const stripped = stripDemoData(raw);
@@ -285,7 +282,7 @@ describe("stripDemoData", () => {
   });
 
   it("keeps a demo project that still holds the guest's own task, and drops the rest", () => {
-    mockStore.reset();
+    seededReset();
     const demoProjectId = mockStore.getProjects()[0].id;
     mockStore.addTask({
       content: "My own task",
